@@ -2,7 +2,7 @@ use {
     std::{
         path::Path, 
         error::Error,
-        io::{prelude::*, BufReader},
+        io::{prelude::*, BufReader, BufWriter},
         fs::File,
         },
 };
@@ -40,11 +40,14 @@ impl Iterator for FrCompress {
 
 
 pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Error>> {
-
     let compressed_lines = FrCompress::new(in_file)?;
-    for cl in compressed_lines? {
-
+    let f = File::open(out_file)?;
+    let mut writer = BufWriter::new(f);
+    
+    for line in compressed_lines {
+        writer.write(&line?)?;
     }
+    
     Ok(())
 }
 
