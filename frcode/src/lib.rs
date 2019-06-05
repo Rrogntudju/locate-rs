@@ -10,7 +10,7 @@ use {
 
 struct FrCompress {
     init: bool,
-    prec_ctr: i16,
+    prec_ctr: u16,
     prec: String,
     lines: Box<dyn Iterator<Item = std::io::Result<String>>>,
 }
@@ -47,7 +47,7 @@ impl Iterator for FrCompress {
                     }
 
                     // Find the common prefix between the current and the previous line
-                    let mut ctr = 0;
+                    let mut ctr: u16 = 0;
                     for (ch_line, ch_prec) in line.to_lowercase().chars().zip(self.prec.to_lowercase().chars()) {
                         if ch_line == ch_prec {
                             ctr = ctr + 1;
@@ -58,7 +58,7 @@ impl Iterator for FrCompress {
                     }
 
                     // Output the offset-differential count
-                    let offset: i16 = ctr - self.prec_ctr;
+                    let offset: i16 = ctr as i16 - self.prec_ctr as i16;
                     if let Ok(offset_i8) = i8::try_from(offset) {
                         out_bytes.extend_from_slice(&offset_i8.to_be_bytes()); // 1 byte offset
                     }
@@ -67,7 +67,7 @@ impl Iterator for FrCompress {
                         out_bytes.extend_from_slice(&offset.to_be_bytes()); // 2 bytes offset big-endian
                     }
 
-                     // Output the line without the prefix
+                    // Output the line without the prefix
                     out_bytes.extend_from_slice(line.chars().skip(ctr as usize).collect::<String>().as_bytes());
                     out_bytes.push(0x0a);
 
@@ -81,6 +81,34 @@ impl Iterator for FrCompress {
     }
 }
 
+struct FrDecompress {
+    init: bool,
+    prec_ctr: u16,
+    prec: String,
+    lines: Box<dyn Iterator<Item = std::io::Result<u8>>>,
+}
+
+impl FrDecompress {
+    fn new (file: &Path) -> std::io::Result<FrDecompress> {
+        let f = File::open(file)?;
+        let reader = BufReader::new(f);
+    
+        Ok( FrDecompress { 
+                init: false,
+                prec_ctr: 0,
+                prec: "".into(),
+                lines: Box::new(reader.bytes()),
+            }
+        )
+    }
+}
+
+impl Iterator for FrDecompress {
+    type Item = Result<String, Box<dyn Error>> ;
+
+    fn next(&mut self) -> Option<Self::Item> {
+    }
+}
 
 pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Error>> {
     let compressed_lines = FrCompress::new(in_file)?;
