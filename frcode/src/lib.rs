@@ -4,12 +4,14 @@ use {
         error::Error,
         io::{prelude::*, BufReader, BufWriter},
         fs::File,
+        convert::TryFrom,
         },
 };
 
 struct FrCompress {
-    count: i16,
-    prefix: String,
+    init: bool,
+    prec_ctr: i16,
+    prec: String,
     lines: Box<dyn Iterator<Item = std::io::Result<String>>>,
 }
 
@@ -19,8 +21,9 @@ impl FrCompress {
         let reader = BufReader::new(f);
     
         Ok( FrCompress { 
-                count: 0,
-                prefix: "".into(),
+                init: false,
+                prec_ctr: 0,
+                prec: "".into(),
                 lines: Box::new(reader.lines()),
             }
         )
@@ -32,7 +35,43 @@ impl Iterator for FrCompress {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.lines.next()? {
-            Ok(line) => {Some(Ok(vec!()))},
+            Ok(line) => 
+                {
+                    // https://www.gnu.org/software/findutils/manual/html_node/find_html/LOCATE02-Database-Format.html
+                    
+                    let mut out_bytes: Vec<u8> = vec![];
+                    if !self.init {
+                        out_bytes.push(0);
+                        out_bytes.extend_from_slice("LOCATEW".as_bytes());
+                        self.init = true;
+                    }
+
+                    let mut ctr = 0;
+                    for (ch_line, ch_prec) in line.to_lowercase().chars().zip(self.prec.to_lowercase().chars()) {
+                        if ch_line == ch_prec {
+                            ctr = ctr + 1;
+                        }
+                        else {
+                            break;
+                        }
+                    }
+
+                    let offset: i16 = ctr - self.prec_ctr;
+                    if let Ok(offset_i8) = i8::try_from(offset) {
+                        out_bytes.extend_from_slice(&offset_i8.to_be_bytes());
+                    }
+                    else {
+                        out_bytes.push(0x80);
+                        out_bytes.extend_from_slice(&offset.to_be_bytes());
+                    }
+
+                    out_bytes.extend_from_slice(&[0x0]);  //TODO
+
+                    self.prec_ctr = ctr;
+                    self.prec = line;
+
+                    Some(Ok(out_bytes))
+                },
             Err(err) => Some(Err(err.into()))
         }
     }
