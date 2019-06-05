@@ -38,14 +38,15 @@ impl Iterator for FrCompress {
             Ok(line) => 
                 {
                     // https://www.gnu.org/software/findutils/manual/html_node/find_html/LOCATE02-Database-Format.html
-                    
                     let mut out_bytes: Vec<u8> = vec![];
                     if !self.init {
                         out_bytes.push(0);
                         out_bytes.extend_from_slice("LOCATEW".as_bytes());
+                        out_bytes.push(0x0a);
                         self.init = true;
                     }
 
+                    // Find the common prefix between the current and the previous line
                     let mut ctr = 0;
                     for (ch_line, ch_prec) in line.to_lowercase().chars().zip(self.prec.to_lowercase().chars()) {
                         if ch_line == ch_prec {
@@ -56,16 +57,19 @@ impl Iterator for FrCompress {
                         }
                     }
 
+                    // Output the offset-differential count
                     let offset: i16 = ctr - self.prec_ctr;
                     if let Ok(offset_i8) = i8::try_from(offset) {
-                        out_bytes.extend_from_slice(&offset_i8.to_be_bytes());
+                        out_bytes.extend_from_slice(&offset_i8.to_be_bytes()); // 1 byte offset
                     }
                     else {
                         out_bytes.push(0x80);
-                        out_bytes.extend_from_slice(&offset.to_be_bytes());
+                        out_bytes.extend_from_slice(&offset.to_be_bytes()); // 2 bytes offset big-endian
                     }
 
-                    out_bytes.extend_from_slice(&[0x0]);  //TODO
+                     // Output the line without the prefix
+                    out_bytes.extend_from_slice(line.chars().skip(ctr as usize).collect::<String>().as_bytes());
+                    out_bytes.push(0x0a);
 
                     self.prec_ctr = ctr;
                     self.prec = line;
@@ -94,17 +98,6 @@ pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Er
 
     Ok(())
 }
-
-pub fn fr_compress(txt : &str, count: i16) -> (Vec<u8>, i16) {
-
-(vec!(), 0)
-}
-
-pub fn fr_decompress(rec: &[u8], prefix: i16) -> (String, i16) {
-
-("".into(), 0)
-}
-
 
 #[cfg(test)]
 mod tests {
