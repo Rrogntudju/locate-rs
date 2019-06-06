@@ -2,25 +2,23 @@ use {
     std::{
         path::Path, 
         error::Error,
+        io,
         io::{prelude::*, BufReader, BufWriter},
         fs::File,
         convert::TryFrom,
         },
 };
 
-struct FrCompress {
+pub struct FrCompress {
     init: bool,
     prec_ctr: u16,
     prec: String,
-    lines: Box<dyn Iterator<Item = std::io::Result<String>>>,
+    lines: Box<dyn Iterator<Item = io::Result<String>>>,
 }
 
 impl FrCompress {
-    fn new (file: &Path) -> std::io::Result<FrCompress> {
-        let f = File::open(file)?;
-        let reader = BufReader::new(f);
-    
-        Ok( FrCompress { 
+    pub fn new (reader: impl BufRead + 'static) -> io::Result<FrCompress> {
+           Ok( FrCompress { 
                 init: false,
                 prec_ctr: 0,
                 prec: "".into(),
@@ -41,8 +39,7 @@ impl Iterator for FrCompress {
                     let mut out_bytes: Vec<u8> = vec![];
                     if !self.init {
                         out_bytes.push(0);
-                        out_bytes.extend_from_slice("LOCATEW".as_bytes());
-                        out_bytes.push(0x0a);
+                        out_bytes.extend_from_slice(b"LOCATEW\n");
                         self.init = true;
                     }
 
@@ -81,18 +78,15 @@ impl Iterator for FrCompress {
     }
 }
 
-struct FrDecompress {
+pub struct FrDecompress {
     init: bool,
     prec_ctr: u16,
     prec: String,
-    lines: Box<dyn Iterator<Item = std::io::Result<u8>>>,
+    lines: Box<dyn Iterator<Item = io::Result<u8>>>,
 }
 
 impl FrDecompress {
-    fn new (file: &Path) -> std::io::Result<FrDecompress> {
-        let f = File::open(file)?;
-        let reader = BufReader::new(f);
-    
+    pub fn new (reader: impl BufRead + 'static) -> io::Result<FrDecompress> {
         Ok( FrDecompress { 
                 init: false,
                 prec_ctr: 0,
@@ -107,11 +101,15 @@ impl Iterator for FrDecompress {
     type Item = Result<String, Box<dyn Error>> ;
 
     fn next(&mut self) -> Option<Self::Item> {
+        Some(Ok("".into()))
     }
 }
 
 pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Error>> {
-    let compressed_lines = FrCompress::new(in_file)?;
+    let f = File::open(in_file)?;
+    let reader = BufReader::new(f);
+    let compressed_lines = FrCompress::new(reader)?;
+    
     let f = File::open(out_file)?;
     let mut writer = BufWriter::new(f);
     
@@ -123,7 +121,17 @@ pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Erro
 }
 
 pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Error>> {
+    let f = File::open(in_file)?;
+    let reader = BufReader::new(f);
+    let decompressed_lines = FrDecompress::new(reader)?;
 
+    let f = File::open(out_file)?;
+    let mut writer = BufWriter::new(f);
+    
+    for line in decompressed_lines {
+        writer.write(line?.as_bytes())?;
+    }
+    
     Ok(())
 }
 
