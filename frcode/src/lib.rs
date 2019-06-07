@@ -17,14 +17,13 @@ pub struct FrCompress {
 }
 
 impl FrCompress {
-    pub fn new (reader: impl BufRead + 'static) -> io::Result<FrCompress> {
-           Ok( FrCompress { 
+    pub fn new (reader: impl BufRead + 'static) -> FrCompress {
+           FrCompress { 
                 init: false,
                 prec_ctr: 0,
                 prec: "".into(),
                 lines: Box::new(reader.lines()),
             }
-        )
     }
 }
 
@@ -86,14 +85,13 @@ pub struct FrDecompress {
 }
 
 impl FrDecompress {
-    pub fn new (reader: impl BufRead + 'static) -> io::Result<FrDecompress> {
-        Ok( FrDecompress { 
+    pub fn new (reader: impl BufRead + 'static) -> FrDecompress {
+            FrDecompress { 
                 init: false,
                 prec_ctr: 0,
                 prec: "".into(),
                 lines: Box::new(reader.bytes()),
             }
-        )
     }
 }
 
@@ -108,7 +106,7 @@ impl Iterator for FrDecompress {
 pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Error>> {
     let f = File::open(in_file)?;
     let reader = BufReader::new(f);
-    let compressed_lines = FrCompress::new(reader)?;
+    let compressed_lines = FrCompress::new(reader);
     
     let f = File::open(out_file)?;
     let mut writer = BufWriter::new(f);
@@ -123,7 +121,7 @@ pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Erro
 pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Error>> {
     let f = File::open(in_file)?;
     let reader = BufReader::new(f);
-    let decompressed_lines = FrDecompress::new(reader)?;
+    let decompressed_lines = FrDecompress::new(reader);
 
     let f = File::open(out_file)?;
     let mut writer = BufWriter::new(f);
@@ -137,8 +135,27 @@ pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Er
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use io::Cursor;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn compress_decompress_ok() {
+        let dirlist = vec!(
+            "C:\\Users", 
+            "C:\\Users\\Fourmilier",
+            "C:\\Users\\Fourmilier\\Documents\\Bébé Aardvark.jpg",
+            "C:\\Users\\Fourmilier\\Documents\\Bébé Armadillo.jpg",
+            "C:\\Windows",
+            "D:\\ماريو.txt",
+            );
+
+        let lines = Cursor::new(dirlist.join("\n"));
+        let compressed_lines = FrCompress::new(lines);
+        let lines = Cursor::new(compressed_lines.map(|l| l.unwrap_or_default()).flatten().collect::<Vec<u8>>());
+        let decompressed_lines = FrDecompress::new(lines);
+
+        for (after, before) in decompressed_lines.map(|l| l.unwrap_or_default()).zip(dirlist) {
+                assert_eq!(before, after);
+        }
     }
 }
