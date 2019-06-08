@@ -147,6 +147,14 @@ mod tests {
             "C:\\Users\\Fourmilier\\Documents\\Bébé Armadillo.jpg",
             "C:\\Windows",
             "D:\\ماريو.txt",
+            "E:\\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/
+               \\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
+               \\cccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "E:\\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/
+               \\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
+               \\cccccccccccccccccccccccccccccccccccccccccccccccccc/
+               \\d",
+            "E:\\e", 
             );
 
         let lines = Cursor::new(dirlist.join("\n"));
@@ -155,7 +163,7 @@ mod tests {
         let decompressed_lines = FrDecompress::new(lines);
 
         for (after, before) in decompressed_lines.map(|l| l.unwrap_or_default()).zip(dirlist) {
-                assert_eq!(before, after);
+            assert_eq!(before, after);
         }
     }
 }
