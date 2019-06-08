@@ -28,7 +28,7 @@ impl FrCompress {
 }
 
 impl Iterator for FrCompress {
-    type Item = Result<Vec<u8>, Box<dyn Error>> ;
+    type Item = io::Result<Vec<u8>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.lines.next()? {
@@ -42,9 +42,9 @@ impl Iterator for FrCompress {
                         self.init = true;
                     }
 
-                    // Find the common prefix between the current and the previous line
+                    // Find the common prefix (case sensitive) between the current and the previous line
                     let mut ctr: u16 = 0;
-                    for (ch_line, ch_prec) in line.to_lowercase().chars().zip(self.prec.to_lowercase().chars()) {
+                    for (ch_line, ch_prec) in line.chars().zip(self.prec.chars()) {
                         if ch_line == ch_prec {
                             ctr = ctr + 1;
                         }
@@ -72,7 +72,8 @@ impl Iterator for FrCompress {
 
                     Some(Ok(out_bytes))
                 },
-            Err(err) => Some(Err(err.into()))
+
+            Err(err) => Some(Err(err))
         }
     }
 }
@@ -81,7 +82,8 @@ pub struct FrDecompress {
     init: bool,
     prec_ctr: u16,
     prec: String,
-    lines: Box<dyn Iterator<Item = io::Result<u8>>>,
+    bytes: Box<dyn Iterator<Item = io::Result<u8>>>,
+    abort_next: bool,
 }
 
 impl FrDecompress {
@@ -90,7 +92,8 @@ impl FrDecompress {
                 init: false,
                 prec_ctr: 0,
                 prec: "".into(),
-                lines: Box::new(reader.bytes()),
+                bytes: Box::new(reader.bytes()),
+                abort_next: false,
             }
     }
 }
@@ -99,6 +102,40 @@ impl Iterator for FrDecompress {
     type Item = Result<String, Box<dyn Error>> ;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.abort_next {
+            return None; // previous iteration had a validation error
+        }
+        
+        if !self.init {
+            match self.bytes.next()? {
+                Ok(b) =>  
+                    {
+                        if b != 0 {
+                            self.abort_next = true;
+                            return Some(Err(""));  // offset must be 0
+                        }
+                        else {
+                            let label = self.bytes.take(7).map(|l| l.unwrap_or_default()).collect::<Vec<u8>>();
+                            if label == "LOCATEW".as_bytes() {
+                                self.init = true;
+                            }
+                            else {
+                                self.abort_next = true;
+                                return Some(Err("")); 
+                            }
+                        }
+                    },
+
+                Err(err) => 
+                    {
+                        return Some(Err(err.into()));
+                    }
+            }
+        }
+         
+             
+
+
         Some(Ok("".into()))
     }
 }
