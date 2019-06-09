@@ -67,9 +67,9 @@ impl Iterator for FrCompress {
 
                     // Output the line without the prefix
                     let suffix = line.chars().skip(ctr as usize).collect::<String>();
-                    let len: u16 = suffix.len() as u16;
-                    if let Ok(len_u8) = u8::try_from(len) {
-                        out_bytes.extend_from_slice(&len_u8.to_be_bytes()); // 1 byte length
+                    let len: i16 = suffix.len() as i16;
+                    if let Ok(len_i8) = i8::try_from(len) {
+                        out_bytes.extend_from_slice(&len_i8.to_be_bytes()); // 1 byte length
                     }
                     else {
                         out_bytes.push(0x80);
@@ -120,7 +120,7 @@ impl Iterator for FrDecompress {
         if !self.init {
             let len_1b = bytes_mut.skip(1).take(1).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
             if len_1b[0] != 0x80 {
-                if let Ok(len_u8) = u8::try_from(len_1b[0]) {
+                if let Ok(len_i8) = i8::try_from(len_1b[0]) {
 
                 } 
             }
