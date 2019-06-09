@@ -37,8 +37,10 @@ impl Iterator for FrCompress {
                     // https://www.gnu.org/software/findutils/manual/html_node/find_html/LOCATE02-Database-Format.html
                     let mut out_bytes: Vec<u8> = vec![];
                     if !self.init {
-                        out_bytes.push(0);
-                        out_bytes.extend_from_slice(b"LOCATEW\n");
+                        let label = b"LOCATEW";
+                        out_bytes.push(0); // offset-differential count
+                        out_bytes.push(label.len() as u8); 
+                        out_bytes.extend_from_slice(label);
                         self.init = true;
                     }
 
@@ -64,8 +66,16 @@ impl Iterator for FrCompress {
                     }
 
                     // Output the line without the prefix
-                    out_bytes.extend_from_slice(line.chars().skip(ctr as usize).collect::<String>().as_bytes());
-                    out_bytes.push(0x0a);
+                    let suffix = line.chars().skip(ctr as usize).collect::<String>();
+                    let len: u16 = suffix.len() as u16;
+                    if let Ok(len_u8) = u8::try_from(len) {
+                        out_bytes.extend_from_slice(&len_u8.to_be_bytes()); // 1 byte length
+                    }
+                    else {
+                        out_bytes.push(0x80);
+                        out_bytes.extend_from_slice(&len.to_be_bytes()); // 2 bytes length big-endian
+                    }
+                    out_bytes.extend_from_slice(suffix.as_bytes());
 
                     self.prec_ctr = ctr;
                     self.prec = line;
@@ -103,34 +113,25 @@ impl Iterator for FrDecompress {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.abort_next {
-            return None; // previous iteration had a validation error
+            return None; // previous iteration caught a validation error
         }
         
+        let bytes_mut = &mut self.bytes;
         if !self.init {
-            match self.bytes.next()? {
-                Ok(b) =>  
-                    {
-                        if b != 0 {
-                            self.abort_next = true;
-                            return Some(Err(""));  // offset must be 0
-                        }
-                        else {
-                            let label = self.bytes.take(7).map(|l| l.unwrap_or_default()).collect::<Vec<u8>>();
-                            if label == "LOCATEW".as_bytes() {
-                                self.init = true;
-                            }
-                            else {
-                                self.abort_next = true;
-                                return Some(Err("")); 
-                            }
-                        }
-                    },
+            let len_1b = bytes_mut.skip(1).take(1).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+            if len_1b[0] != 0x80 {
+                if let Ok(len_u8) = u8::try_from(len_1b[0]) {
 
-                Err(err) => 
-                    {
-                        return Some(Err(err.into()));
-                    }
+                } 
             }
+
+/*             if label == "LOCATEW".as_bytes() {
+                self.init = true;
+            }
+            else {
+                self.abort_next = true;
+                return Some(Err("")); 
+            } */
         }
          
              
