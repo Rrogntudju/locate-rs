@@ -2,8 +2,7 @@ use {
     std::{
         path::Path, 
         error::Error,
-        io,
-        io::{prelude::*, BufReader, BufWriter},
+        io, io::{prelude::*, BufReader, BufWriter},
         fs::File,
         convert::TryFrom,
         },
@@ -106,6 +105,10 @@ impl FrDecompress {
                 abort_next: false,
             }
     }
+    
+    fn test(&mut self) -> u8 {
+        0x0
+    }
 }
 
 impl Iterator for FrDecompress {
@@ -119,22 +122,28 @@ impl Iterator for FrDecompress {
         let bytes_mut = &mut self.bytes;
         if !self.init {
             let len_1b = bytes_mut.skip(1).take(1).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
-            if len_1b[0] != 0x80 {
-                if let Ok(len_i8) = i8::try_from(len_1b[0]) {
-
-                } 
-            }
-
-/*             if label == "LOCATEW".as_bytes() {
+            let len: i16 =
+                if len_1b[0] != 0x80 {
+                    i8::from_be_bytes([len_1b[0]]) as i16
+                }
+                else {
+                    let len_2b = bytes_mut.take(2).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+                    let mut buf = [0,0];
+                    buf.copy_from_slice(&len_2b);
+                    i16::from_be_bytes(buf)
+                };
+            
+            let label = bytes_mut.take(len as usize).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+            if label == "LOCATEW".as_bytes() {
                 self.init = true;
             }
             else {
+                self.test();
                 self.abort_next = true;
                 return Some(Err("")); 
-            } */
+            }
         }
-         
-             
+              
 
 
         Some(Ok("".into()))
