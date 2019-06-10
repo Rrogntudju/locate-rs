@@ -110,7 +110,6 @@ pub struct FrDecompress {
     prec_ctr: u16,
     prec: String,
     bytes: Box<dyn Iterator<Item = io::Result<u8>>>,
-    abort_next: bool,
 }
 
 impl FrDecompress {
@@ -120,7 +119,6 @@ impl FrDecompress {
                 prec_ctr: 0,
                 prec: "".into(),
                 bytes: Box::new(reader.bytes()),
-                abort_next: false,
             }
     }
     
@@ -153,10 +151,13 @@ impl FrDecompress {
         if suffix.len() != len as usize {
             return None;    // premature end of self.bytes
         }
-        match String::from_utf8(suffix) {
-            Ok(suffix) => Some(Ok(suffix)),
-            Err(err) => Some(Err(err.into()))
-        }
+        
+        Some(
+            match String::from_utf8(suffix) {
+                Ok(suffix) => Ok(suffix),
+                Err(err) => Err(err.into())
+            }
+        )
     }
 }
 
@@ -164,28 +165,20 @@ impl Iterator for FrDecompress {
     type Item = Result<String, Box<dyn Error>> ;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.abort_next {
-            return None; // previous iteration caught a validation error
-        }
-        
         let bytes_mut = &mut self.bytes;
         if !self.init {
-            let _ = bytes_mut.next()?;  //  Skip the offset
+            let _ = bytes_mut.next()?;  // Skip the offset
             let len = self.count_from_bytes()?;
             let label = 
                 match self.suffix_from_bytes(len)? {
                     Ok(label) => label,
-                    Err(err) => {
-                        self.abort_next = true;
-                        return Some(Err(err.into()))
-                    },
+                    Err(err) => return Some(Err(err.into())),
                 };
             
             if label == "LOCATEW" {
                 self.init = true;
             }
             else {
-                self.abort_next = true;
                 return Some(Err(FrError::InvalidLabelError.into())); 
             }
         }
@@ -195,10 +188,7 @@ impl Iterator for FrDecompress {
         let suffix = 
             match self.suffix_from_bytes(len)? {
                     Ok(suffix) => suffix,
-                    Err(err) => {
-                        self.abort_next = true;
-                        return Some(Err(err.into()))
-                    },
+                    Err(err) => return Some(Err(err.into())),
                 };
 
         let len_prefix = self.prec_ctr as i16 + offset; // length in chars
