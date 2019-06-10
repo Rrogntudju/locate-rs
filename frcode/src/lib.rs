@@ -5,12 +5,25 @@ use {
         io, io::{prelude::*, BufReader, BufWriter},
         fs::File,
         convert::TryFrom,
-        string::FromUtf8Error,
+        fmt,
         },
-};
+    };
 
+#[derive(Debug)]
 pub enum FrError {
+    InvalidLengthError,
+    InvalidLabelError,
+}
 
+impl Error for FrError {}
+
+impl fmt::Display for FrError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            FrError::InvalidLengthError => write!(f, "La longueur du suffixe est invalide"),
+            FrError::InvalidLabelError => write!(f, "Fichier updateDB invalide"),
+        }
+    }
 }
 
 pub struct FrCompress {
@@ -125,7 +138,10 @@ impl FrDecompress {
         }
     }
 
-    fn suffix_from_bytes(&mut self, len: i16) -> Result<String, FromUtf8Error>  {
+    fn suffix_from_bytes(&mut self, len: i16) -> Result<String, Box<dyn Error>>  {
+        if len <= 0 {
+            return Err(FrError::InvalidLengthError.into());
+        }
         let bytes_mut = &mut self.bytes;
         let suffix = bytes_mut.take(len as usize).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
         Ok(String::from_utf8(suffix)?)
@@ -137,7 +153,7 @@ impl Iterator for FrDecompress {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.abort_next {
-            return None; // previous iteration caught a validation error
+            return None; // previous iteration caught an FrError
         }
         
         let bytes_mut = &mut self.bytes;
@@ -150,12 +166,12 @@ impl Iterator for FrDecompress {
                     Err(err) => return Some(Err(err.into())),
                 };
             
-            if label == "LOCATEW".into() {
+            if label == "LOCATEW" {
                 self.init = true;
             }
             else {
                 self.abort_next = true;
-                return Some(Err("")); 
+                return Some(Err(FrError::InvalidLabelError.into())); 
             }
         }
               
