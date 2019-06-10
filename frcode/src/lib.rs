@@ -84,7 +84,7 @@ impl Iterator for FrCompress {
 
                     // Output the line without the prefix
                     let suffix = line.chars().skip(ctr as usize).collect::<String>();
-                    let len: i16 = suffix.len() as i16;
+                    let len: i16 = suffix.len() as i16;  // length in bytes
                     if let Ok(len_i8) = i8::try_from(len) {
                         out_bytes.extend_from_slice(&len_i8.to_be_bytes()); // 1 byte length
                     }
@@ -124,27 +124,39 @@ impl FrDecompress {
             }
     }
     
-    fn count_from_bytes(&mut self) -> i16 {
+    fn count_from_bytes(&mut self) -> Option<i16> {
         let bytes_mut = &mut self.bytes;
         let count_1b = bytes_mut.take(1).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+        if count_1b.len() != 1 {
+            return None;    // premature end of self.bytes
+        }
         if count_1b[0] != 0x80 {
-            i8::from_be_bytes([count_1b[0]]) as i16
+            Some(i8::from_be_bytes([count_1b[0]]) as i16)
         }
         else {
             let count_2b = bytes_mut.take(2).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+            if count_1b.len() != 2 {
+                return None;    // premature end of self.bytes
+            }
             let mut buf = [0,0];
             buf.copy_from_slice(&count_2b);
-            i16::from_be_bytes(buf)
+            Some(i16::from_be_bytes(buf))
         }
     }
 
-    fn suffix_from_bytes(&mut self, len: i16) -> Result<String, Box<dyn Error>>  {
+    fn suffix_from_bytes(&mut self, len: i16) -> Option<Result<String, Box<dyn Error>>>  {
         if len <= 0 {
-            return Err(FrError::InvalidLengthError.into());
+            return Some(Err(FrError::InvalidLengthError.into()));
         }
         let bytes_mut = &mut self.bytes;
         let suffix = bytes_mut.take(len as usize).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
-        Ok(String::from_utf8(suffix)?)
+        if suffix.len() != len as usize {
+            return None;    // premature end of self.bytes
+        }
+        match String::from_utf8(suffix) {
+            Ok(suffix) => Some(Ok(suffix)),
+            Err(err) => Some(Err(err.into()))
+        }
     }
 }
 
@@ -153,15 +165,15 @@ impl Iterator for FrDecompress {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.abort_next {
-            return None; // previous iteration caught an FrError
+            return None; // previous iteration caught a validation error
         }
         
         let bytes_mut = &mut self.bytes;
         if !self.init {
-            bytes_mut.next();  //  Skip the offset
-            let len = self.count_from_bytes();
+            let _ = bytes_mut.next()?;  //  Skip the offset
+            let len = self.count_from_bytes()?;
             let label = 
-                match self.suffix_from_bytes(len) {
+                match self.suffix_from_bytes(len)? {
                     Ok(label) => label,
                     Err(err) => {
                         self.abort_next = true;
@@ -178,10 +190,10 @@ impl Iterator for FrDecompress {
             }
         }
 
-        let offset = self.count_from_bytes();
-        let len = self.count_from_bytes();
+        let offset = self.count_from_bytes()?;
+        let len = self.count_from_bytes()?;
         let suffix = 
-            match self.suffix_from_bytes(len) {
+            match self.suffix_from_bytes(len)? {
                     Ok(suffix) => suffix,
                     Err(err) => {
                         self.abort_next = true;
@@ -189,11 +201,11 @@ impl Iterator for FrDecompress {
                     },
                 };
 
-        let len_prefix = self.prec_ctr as i16 + offset;
-        self.prec.truncate(len_prefix as usize);
-        let line = String::from(&self.prec) + &suffix;
+        let len_prefix = self.prec_ctr as i16 + offset; // length in chars
+        let prefix = self.prec.chars().take(len_prefix as usize).collect::<String>();
+        let line = prefix + &suffix;
 
-        self.prec_ctr = line.len() as u16;
+        self.prec_ctr = len_prefix as u16;
         self.prec = line.clone();
 
         Some(Ok(line))
@@ -236,7 +248,7 @@ mod tests {
     use io::Cursor;
 
     #[test]
-    fn compress_decompress_ok() {
+    fn compress_decompress_ok() -> Result<(), Box<dyn Error>> {
         let dirlist = vec!(
             "C:\\Users", 
             "C:\\Users\\Fourmilier",
@@ -244,13 +256,15 @@ mod tests {
             "C:\\Users\\Fourmilier\\Documents\\Bébé Armadillo.jpg",
             "C:\\Windows",
             "D:\\ماريو.txt",
-            "E:\\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/
-               \\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
-               \\cccccccccccccccccccccccccccccccccccccccccccccccccc",
-            "E:\\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/
-               \\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
-               \\cccccccccccccccccccccccccccccccccccccccccccccccccc/
-               \\d",
+            concat!("E:\\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "\\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "\\cccccccccccccccccccccccccccccccccccccccccccccccccc"
+            ),
+            concat!("E:\\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "\\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "\\cccccccccccccccccccccccccccccccccccccccccccccccccc",
+                    "\\d"
+            ),
             "E:\\e", 
             );
 
@@ -262,5 +276,6 @@ mod tests {
         for (after, before) in decompressed_lines.map(|l| l.unwrap_or_default()).zip(dirlist) {
             assert_eq!(before, after);
         }
+        Ok(())
     }
 }
