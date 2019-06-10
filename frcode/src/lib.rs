@@ -5,8 +5,13 @@ use {
         io, io::{prelude::*, BufReader, BufWriter},
         fs::File,
         convert::TryFrom,
+        string::FromUtf8Error,
         },
 };
+
+pub enum FrError {
+
+}
 
 pub struct FrCompress {
     init: bool,
@@ -106,8 +111,24 @@ impl FrDecompress {
             }
     }
     
-    fn test(&mut self) -> u8 {
-        0x0
+    fn count_from_bytes(&mut self) -> i16 {
+        let bytes_mut = &mut self.bytes;
+        let count_1b = bytes_mut.take(1).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+        if count_1b[0] != 0x80 {
+            i8::from_be_bytes([count_1b[0]]) as i16
+        }
+        else {
+            let count_2b = bytes_mut.take(2).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+            let mut buf = [0,0];
+            buf.copy_from_slice(&count_2b);
+            i16::from_be_bytes(buf)
+        }
+    }
+
+    fn suffix_from_bytes(&mut self, len: i16) -> Result<String, FromUtf8Error>  {
+        let bytes_mut = &mut self.bytes;
+        let suffix = bytes_mut.take(len as usize).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+        Ok(String::from_utf8(suffix)?)
     }
 }
 
@@ -121,24 +142,18 @@ impl Iterator for FrDecompress {
         
         let bytes_mut = &mut self.bytes;
         if !self.init {
-            let len_1b = bytes_mut.skip(1).take(1).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
-            let len: i16 =
-                if len_1b[0] != 0x80 {
-                    i8::from_be_bytes([len_1b[0]]) as i16
-                }
-                else {
-                    let len_2b = bytes_mut.take(2).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
-                    let mut buf = [0,0];
-                    buf.copy_from_slice(&len_2b);
-                    i16::from_be_bytes(buf)
+            bytes_mut.next();  //  Skip the offset
+            let len = self.count_from_bytes();
+            let label = 
+                match self.suffix_from_bytes(len) {
+                    Ok(label) => label,
+                    Err(err) => return Some(Err(err.into())),
                 };
             
-            let label = bytes_mut.take(len as usize).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
-            if label == "LOCATEW".as_bytes() {
+            if label == "LOCATEW".into() {
                 self.init = true;
             }
             else {
-                self.test();
                 self.abort_next = true;
                 return Some(Err("")); 
             }
