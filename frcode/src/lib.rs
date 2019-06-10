@@ -163,7 +163,10 @@ impl Iterator for FrDecompress {
             let label = 
                 match self.suffix_from_bytes(len) {
                     Ok(label) => label,
-                    Err(err) => return Some(Err(err.into())),
+                    Err(err) => {
+                        self.abort_next = true;
+                        return Some(Err(err.into()))
+                    },
                 };
             
             if label == "LOCATEW" {
@@ -174,10 +177,26 @@ impl Iterator for FrDecompress {
                 return Some(Err(FrError::InvalidLabelError.into())); 
             }
         }
-              
 
+        let offset = self.count_from_bytes();
+        let len = self.count_from_bytes();
+        let suffix = 
+            match self.suffix_from_bytes(len) {
+                    Ok(suffix) => suffix,
+                    Err(err) => {
+                        self.abort_next = true;
+                        return Some(Err(err.into()))
+                    },
+                };
 
-        Some(Ok("".into()))
+        let len_prefix = self.prec_ctr as i16 + offset;
+        self.prec.truncate(len_prefix as usize);
+        let line = String::from(&self.prec) + &suffix;
+
+        self.prec_ctr = line.len() as u16;
+        self.prec = line.clone();
+
+        Some(Ok(line))
     }
 }
 
