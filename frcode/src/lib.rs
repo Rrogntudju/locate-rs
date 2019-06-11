@@ -126,7 +126,7 @@ impl FrDecompress {
         let bytes_mut = &mut self.bytes;
         let count_1b = bytes_mut.take(1).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
         if count_1b.len() != 1 {
-            return None;    // premature end of self.bytes
+            return None;
         }
         if count_1b[0] != 0x80 {
             Some(i8::from_be_bytes([count_1b[0]]) as i16)
@@ -134,7 +134,7 @@ impl FrDecompress {
         else {
             let count_2b = bytes_mut.take(2).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
             if count_1b.len() != 2 {
-                return None;    // premature end of self.bytes
+                return None;
             }
             let mut buf = [0,0];
             buf.copy_from_slice(&count_2b);
@@ -149,7 +149,7 @@ impl FrDecompress {
         let bytes_mut = &mut self.bytes;
         let suffix = bytes_mut.take(len as usize).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
         if suffix.len() != len as usize {
-            return None;    // premature end of self.bytes
+            return None;
         }
         
         Some(
@@ -183,7 +183,7 @@ impl Iterator for FrDecompress {
             }
         }
 
-        let offset = self.count_from_bytes()?;
+        let offset = self.count_from_bytes()?;  // end of valid updateDB file happens here
         let len = self.count_from_bytes()?;
         let suffix = 
             match self.suffix_from_bytes(len)? {
