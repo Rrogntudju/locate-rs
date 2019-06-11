@@ -238,7 +238,7 @@ mod tests {
     use io::Cursor;
 
     #[test]
-    fn compress_decompress_ok() -> Result<(), Box<dyn Error>> {
+    fn compress_decompress_ok() {
         let dirlist = vec!(
             "C:\\Users", 
             "C:\\Users\\Fourmilier",
@@ -266,6 +266,5 @@ mod tests {
         for (after, before) in decompressed_lines.map(|l| l.unwrap_or_default()).zip(dirlist) {
             assert_eq!(before, after);
         }
-        Ok(())
     }
 }
