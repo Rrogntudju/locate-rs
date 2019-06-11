@@ -201,7 +201,7 @@ impl Iterator for FrDecompress {
     }
 }
 
-pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Error>> {
+pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<usize, Box<dyn Error>> {
     let f = File::open(in_file)?;
     let reader = BufReader::new(f);
     let compressed_lines = FrCompress::new(reader);
@@ -209,14 +209,15 @@ pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Erro
     let f = File::open(out_file)?;
     let mut writer = BufWriter::new(f);
     
+    let mut ctr_bytes: usize = 0;
     for line in compressed_lines {
-        writer.write(&line?)?;
+        ctr_bytes = ctr_bytes + writer.write(&line?)?;
     }
     
-    Ok(())
+    Ok(ctr_bytes)
 }
 
-pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Error>> {
+pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<usize, Box<dyn Error>> {
     let f = File::open(in_file)?;
     let reader = BufReader::new(f);
     let decompressed_lines = FrDecompress::new(reader);
@@ -224,11 +225,12 @@ pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<(), Box<dyn Er
     let f = File::open(out_file)?;
     let mut writer = BufWriter::new(f);
     
+    let mut ctr_bytes: usize = 0;
     for line in decompressed_lines {
-        writer.write(line?.as_bytes())?;
+        ctr_bytes = ctr_bytes + writer.write(line?.as_bytes())?;
     }
     
-    Ok(())
+    Ok(ctr_bytes)
 }
 
 #[cfg(test)]
