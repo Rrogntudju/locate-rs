@@ -189,7 +189,7 @@ impl Iterator for FrDecompress {
             match self.suffix_from_bytes(len)? {
                     Ok(suffix) => suffix,
                     Err(err) => return Some(Err(err.into())),
-                };
+            };
 
         let len_prefix = self.prec_ctr as i16 + offset; // length in chars
         let prefix = self.prec.chars().take(len_prefix as usize).collect::<String>();
