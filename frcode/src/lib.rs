@@ -165,9 +165,8 @@ impl Iterator for FrDecompress {
     type Item = Result<String, Box<dyn Error>> ;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let bytes_mut = &mut self.bytes;
         if !self.init {
-            let _ = bytes_mut.next()?;  // Skip the offset
+            let _ = self.bytes.next()?;  // Skip the offset
             let len = self.count_from_bytes()?;
             let label = 
                 match self.suffix_from_bytes(len)? {
