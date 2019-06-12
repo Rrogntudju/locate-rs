@@ -6,8 +6,8 @@ use {
         fs::File,
         convert::TryFrom,
         fmt,
-        },
-    };
+    },
+};
 
 #[derive(Debug)]
 pub enum FrError {
