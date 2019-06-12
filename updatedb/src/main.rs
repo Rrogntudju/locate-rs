@@ -69,8 +69,7 @@ fn main() {
                         // Convert an UTF-8 string to an null-delimited UTF-16 string
                         let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
                         ld_utf16.push(0); 
-                        let ld_ptr = ld_utf16.as_ptr();
-                        let ld_type = unsafe { GetDriveTypeW(ld_ptr) };
+                        let ld_type = unsafe { GetDriveTypeW(ld_utf16.as_ptr()) };
                         if ld_type == 3 {
                             Some(ld)
                         }
