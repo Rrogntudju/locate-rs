@@ -2,7 +2,6 @@ use {
         walkdir::*,
         frcode::*,
         std::env,
-        core::ffi::c_void,
         winapi::um::fileapi::{GetLogicalDrives, GetDriveTypeW},
         winapi::shared::minwindef::DWORD,
 };
@@ -41,18 +40,49 @@ impl Iterator for DwordBits {
     }
 }
 
+
 fn main() {
-    // Get the list of the logical fixed drives
-    let drives: DWORD = unsafe { GetLogicalDrives() };
-    if drives == 0 {
+    // Get the list of the fixed logical drives
+    let ld_bits: DWORD = unsafe { GetLogicalDrives() };
+    if ld_bits == 0 {
         match std::io::Error::last_os_error().raw_os_error() {
             Some(e) => eprintln!("GetLogicalDrives: {}", e),
             None    => eprintln!("GetLogicalDrives: DOH!"),
         }
+        return;
     }
-    else {
-        for bit in DwordBits::new(drives) {
 
-        }
-    }
+    let ld_all = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                    .chars()
+                    .map(|c| { 
+                        let mut dr = String::new(); 
+                        dr.push(c); dr + ":\\" 
+                    })
+                    .collect::<Vec<String>>();
+
+    let ld_fix = DwordBits::new(ld_bits)
+                    .zip(ld_all)
+                    .filter_map(|(b, ld)| {
+                        if !b {
+                            return None;  // not a logical drive
+                        }
+                        // Convert an UTF-8 string to an null-delimited UTF-16 string
+                        let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
+                        ld_utf16.push(0); 
+                        let ld_ptr = ld_utf16.as_ptr();
+                        let ld_type = unsafe { GetDriveTypeW(ld_ptr) };
+                        if ld_type == 3 {
+                            Some(ld)
+                        }
+                        else {
+                            None // not a fixed logical drive
+                        }
+                    })
+                    .collect::<Vec<String>>();
+
+    // Generate a dirlist from each logical drives and save it in a temp file 
+    let mut dirlist_path = env::temp_dir();
+    dirlist_path.push("dirlist");
+    dirlist_path.set_extension("tmp");
+
 }
