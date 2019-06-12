@@ -28,7 +28,7 @@ impl Iterator for DwordBits {
             return None;
         }
 
-        let bit = (self.dword << self.ctr).rotate_left(1);
+        let bit = (self.dword >> self.ctr).rotate_right(1);
         self.ctr = self.ctr + 1;
 
         return Some(
@@ -56,7 +56,8 @@ fn main() {
                     .chars()
                     .map(|c| { 
                         let mut dr = String::new(); 
-                        dr.push(c); dr + ":\\" 
+                        dr.push(c); 
+                        dr + ":\\" 
                     })
                     .collect::<Vec<String>>();
 
@@ -79,9 +80,24 @@ fn main() {
                     })
                     .collect::<Vec<String>>();
 
-    // Generate a dirlist from each logical drives and save it in a temp file 
+    // Generate a dir list from each logical drives and save it to a temp file 
     let mut dirlist_path = env::temp_dir();
     dirlist_path.push("dirlist");
     dirlist_path.set_extension("tmp");
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dwordbits_ok() {
+        let mut bits = DwordBits::new(12 as DWORD);
+        assert_eq!(bits.next(), Some(false)); 
+        assert_eq!(bits.next(), Some(false)); 
+        assert_eq!(bits.next(), Some(true));  
+        assert_eq!(bits.next(), Some(true)); 
+        bits.for_each(|b| assert_eq!(b, false));
+    }
 }
