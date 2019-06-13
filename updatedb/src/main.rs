@@ -1,10 +1,22 @@
 use {
-        walkdir::*,
+        std::time::SystemTime,
+        walkdir::WalkDir,
         frcode::*,
         std::env,
         winapi::um::fileapi::{GetLogicalDrives, GetDriveTypeW},
         winapi::shared::minwindef::DWORD,
+        std::fs::File,
+        std::io::BufWriter,
 };
+
+#[derive(Default)]
+struct Statistics {
+    nb_dirs: usize,
+    nb_files: usize,
+    uncompressed: usize,
+    compressed: usize,
+    elapsed: u64,
+}
 
 struct DwordBits {
     dword: DWORD,
@@ -37,6 +49,8 @@ impl Iterator for DwordBits {
 
 
 fn main() {
+    let start = SystemTime::now();
+
     // Get the list of the fixed logical drives
     let ld_bits: DWORD = unsafe { GetLogicalDrives() };
     if ld_bits == 0 {
@@ -62,7 +76,7 @@ fn main() {
                         if !b {
                             return None;  // not a logical drive
                         }
-                        // Convert an UTF-8 string to an null-delimited UTF-16 string
+                        // Convert an UTF-8 string to a null-delimited UTF-16 string
                         let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
                         ld_utf16.push(0); 
                         let ld_type = unsafe { GetDriveTypeW(ld_utf16.as_ptr()) };
@@ -76,10 +90,26 @@ fn main() {
                     .collect::<Vec<String>>();
 
     // Generate a dir list from each logical drives and save it to a temp file 
-    let mut dirlist_path = env::temp_dir();
-    dirlist_path.push("dirlist");
-    dirlist_path.set_extension("tmp");
+    let mut path = env::temp_dir();
+    path.push("dirlist");
+    path.set_extension("tmp");
+    let f = 
+        match File::open(path) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("{}", e); 
+                return;
+            }
+        };
+    let mut writer = BufWriter::new(f);
+    let mut stats = Statistics::default();
 
+    for ld in ld_fix {
+        let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
+        for entry in walker {
+        
+        }
+    }
 
 }
 

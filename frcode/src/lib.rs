@@ -38,7 +38,7 @@ impl FrCompress {
            FrCompress { 
                 init: false,
                 prec_ctr: 0,
-                prec: "".into(),
+                prec: String::new(),
                 lines: Box::new(reader.lines()),
             }
     }
@@ -117,7 +117,7 @@ impl FrDecompress {
             FrDecompress { 
                 init: false,
                 prec_ctr: 0,
-                prec: "".into(),
+                prec: String::new(),
                 bytes: Box::new(reader.bytes()),
             }
     }
