@@ -124,7 +124,7 @@ impl FrDecompress {
     
     fn count_from_bytes(&mut self) -> Option<i16> {
         let bytes_mut = &mut self.bytes;
-        let count_1b = bytes_mut.take(1).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+        let count_1b = bytes_mut.take(1).filter_map(|b| b.ok()).collect::<Vec<u8>>();
         if count_1b.len() != 1 {
             return None;
         }
@@ -132,7 +132,7 @@ impl FrDecompress {
             Some(i8::from_be_bytes([count_1b[0]]) as i16)
         }
         else {
-            let count_2b = bytes_mut.take(2).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+            let count_2b = bytes_mut.take(2).filter_map(|b| b.ok()).collect::<Vec<u8>>();
             if count_1b.len() != 2 {
                 return None;
             }
@@ -147,7 +147,7 @@ impl FrDecompress {
             return Some(Err(FrError::InvalidLengthError.into()));
         }
         let bytes_mut = &mut self.bytes;
-        let suffix = bytes_mut.take(len as usize).map(|b| b.unwrap_or_default()).collect::<Vec<u8>>();
+        let suffix = bytes_mut.take(len as usize).filter_map(|b| b.ok()).collect::<Vec<u8>>();
         if suffix.len() != len as usize {
             return None;
         }
@@ -261,10 +261,10 @@ mod tests {
 
         let lines = Cursor::new(dirlist.join("\n"));
         let compressed_lines = FrCompress::new(lines);
-        let lines = Cursor::new(compressed_lines.map(|l| l.unwrap_or_default()).flatten().collect::<Vec<u8>>());
+        let lines = Cursor::new(compressed_lines.filter_map(|l| l.ok()).flatten().collect::<Vec<u8>>());
         let decompressed_lines = FrDecompress::new(lines);
 
-        for (after, before) in decompressed_lines.map(|l| l.unwrap_or_default()).zip(dirlist) {
+        for (after, before) in decompressed_lines.filter_map(|l| l.ok()).zip(dirlist) {
             assert_eq!(before, after);
         }
     }

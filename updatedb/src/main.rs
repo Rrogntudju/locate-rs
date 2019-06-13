@@ -28,15 +28,10 @@ impl Iterator for DwordBits {
             return None;
         }
 
-        let bit = (self.dword >> self.ctr).rotate_right(1);
+        let bit = self.dword & (1 << self.ctr) != 0;
         self.ctr = self.ctr + 1;
 
-        return Some(
-            match bit {
-                0 => false,
-                1 | _ => true,
-            }
-        )
+        Some(bit)
     }
 }
 
@@ -84,6 +79,7 @@ fn main() {
     let mut dirlist_path = env::temp_dir();
     dirlist_path.push("dirlist");
     dirlist_path.set_extension("tmp");
+
 
 }
 
