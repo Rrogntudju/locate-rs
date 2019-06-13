@@ -6,8 +6,20 @@ use {
         winapi::um::fileapi::{GetLogicalDrives, GetDriveTypeW},
         winapi::shared::minwindef::DWORD,
         std::fs::File,
-        std::io::BufWriter,
+        std::io::{BufWriter, Write},
 };
+
+macro_rules! unwrap_or_eprintln {
+    ($expression:expr) => (
+        match $expression {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("{}", e); 
+                return;
+            }
+        }
+    )
+}
 
 #[derive(Default)]
 struct Statistics {
@@ -93,23 +105,34 @@ fn main() {
     let mut path = env::temp_dir();
     path.push("dirlist");
     path.set_extension("tmp");
-    let f = 
-        match File::open(path) {
-            Ok(f) => f,
-            Err(e) => {
-                eprintln!("{}", e); 
-                return;
-            }
-        };
-    let mut writer = BufWriter::new(f);
+     
     let mut stats = Statistics::default();
-
-    for ld in ld_fix {
-        let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
-        for entry in walker {
-        
+    
+    {
+        let mut writer = BufWriter::new(unwrap_or_eprintln!(File::open(path)));
+        for ld in ld_fix {
+            let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
+            for entry in walker {
+                if let Ok(m) = entry.metadata() {
+                    let p = entry.path().to_str().unwrap();
+                    stats.uncompressed = stats.uncompressed + p.len();
+                    if m.is_dir() {
+                        unwrap_or_eprintln!(write!(writer, "{}\\\n", p));
+                        stats.nb_dirs = stats.nb_dirs + 1;
+                    }
+                    else {
+                        unwrap_or_eprintln!(write!(writer, "{}\n", p));
+                        stats.nb_files = stats.nb_files + 1;
+                    }
+                }
+                else {
+                    continue;
+                }
+            }
         }
     }
+
+    
 
 }
 
