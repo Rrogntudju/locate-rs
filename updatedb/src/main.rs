@@ -104,11 +104,11 @@ fn main() {
 
     // Generate a dir list from each logical drives and save it to a temp file 
     let mut stats = Statistics::default();
-    let mut path = env::temp_dir();
-    path.push("dirlist");
-    path.set_extension("txt");
+    let mut dirlist = env::temp_dir();
+    dirlist.push("dirlist");
+    dirlist.set_extension("txt");
     {
-        let mut writer = BufWriter::new(unwrap!(File::create(&path)));
+        let mut writer = BufWriter::new(unwrap!(File::create(&dirlist)));
         for ld in ld_fix {
             let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
             for entry in walker {
@@ -133,19 +133,27 @@ fn main() {
     }
 
     // Compress the dir list
-    let mut out_file = env::temp_dir();
-    out_file.push("locate");
-    out_file.set_extension("tmp");
-    stats.compressed = unwrap!(compress_file(&path, &out_file));
+    let mut db1 = env::temp_dir();
+    db1.push("locate");
+    db1.set_extension("db1");
+    stats.compressed = unwrap!(compress_file(&dirlist, &db1));
 
     // Cleanup
-    unwrap!(remove_file(&path));
+    unwrap!(remove_file(&dirlist));
+    let mut db2 = env::temp_dir();
+    db2.push("locate");
+    db2.set_extension("db2");
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
-    unwrap!(remove_file(&db));
-    unwrap!(rename(&out_file, &db));
-
+    if db.is_file() {
+        unwrap!(rename(&db, &db2));
+    }
+    unwrap!(rename(&db1, &db));
+    if db2.is_file() {
+        unwrap!(remove_file(&db2));
+    }
+    
     // Output the statistics
     stats.elapsed = start.elapsed().as_secs();
     let mut path = env::temp_dir();
