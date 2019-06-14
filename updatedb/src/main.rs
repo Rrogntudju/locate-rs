@@ -24,10 +24,10 @@ macro_rules! unwrap {
 
 #[derive(Default, Serialize)]
 struct Statistics {
-    nb_dirs: usize,
-    nb_files: usize,
-    uncompressed: usize,
-    compressed: usize,
+    dirs: usize,
+    files: usize,
+    files_bytes: usize,
+    db_size: usize,
     elapsed: u64,
 }
 
@@ -59,7 +59,6 @@ impl Iterator for DwordBits {
         Some(bit)
     }
 }
-
 
 fn main() {
     let start = Instant::now();
@@ -116,16 +115,16 @@ fn main() {
                     let p =
                         match entry.path().to_str() {
                             Some(p) => p,
-                            None => continue, /* path contains non-unicode sequence */
+                            None => continue, /* path contains a non-unicode sequence */
                         };
-                    stats.uncompressed = stats.uncompressed + p.len();
                     if m.is_dir() {
                         unwrap!(write!(writer, "{}\\\n", p));
-                        stats.nb_dirs = stats.nb_dirs + 1;
+                        stats.dirs = stats.dirs + 1;
                     }
                     else {
                         unwrap!(write!(writer, "{}\n", p));
-                        stats.nb_files = stats.nb_files + 1;
+                        stats.files = stats.files + 1;
+                        stats.files_bytes = stats.files_bytes + p.len();
                     }
                 }
             }
@@ -136,7 +135,7 @@ fn main() {
     let mut db1 = env::temp_dir();
     db1.push("locate");
     db1.set_extension("db1");
-    stats.compressed = unwrap!(compress_file(&dirlist, &db1));
+    stats.db_size = unwrap!(compress_file(&dirlist, &db1));
 
     // Cleanup
     unwrap!(remove_file(&dirlist));
