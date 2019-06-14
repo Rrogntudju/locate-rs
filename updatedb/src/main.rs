@@ -1,12 +1,13 @@
 use {
-        std::time::SystemTime,
+        std::time::Instant,
         walkdir::WalkDir,
-        frcode::*,
+        frcode::FrCompress,
         std::env,
         winapi::um::fileapi::{GetLogicalDrives, GetDriveTypeW},
         winapi::shared::minwindef::DWORD,
         std::fs::File,
         std::io::{BufWriter, Write},
+        serde::Serialize,
 };
 
 macro_rules! unwrap_or_eprintln {
@@ -21,7 +22,7 @@ macro_rules! unwrap_or_eprintln {
     )
 }
 
-#[derive(Default)]
+#[derive(Default, Serialize)]
 struct Statistics {
     nb_dirs: usize,
     nb_files: usize,
@@ -61,7 +62,7 @@ impl Iterator for DwordBits {
 
 
 fn main() {
-    let start = SystemTime::now();
+    let start = Instant::now();
 
     // Get the list of the fixed logical drives
     let ld_bits: DWORD = unsafe { GetLogicalDrives() };
@@ -102,13 +103,11 @@ fn main() {
                     .collect::<Vec<String>>();
 
     // Generate a dir list from each logical drives and save it to a temp file 
-    let mut path = env::temp_dir();
-    path.push("dirlist");
-    path.set_extension("tmp");
-     
     let mut stats = Statistics::default();
-    
     {
+        let mut path = env::temp_dir();
+        path.push("dirlist");
+        path.set_extension("tmp");
         let mut writer = BufWriter::new(unwrap_or_eprintln!(File::open(path)));
         for ld in ld_fix {
             let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
@@ -125,15 +124,18 @@ fn main() {
                         stats.nb_files = stats.nb_files + 1;
                     }
                 }
-                else {
-                    continue;
-                }
             }
         }
     }
-
-    
-
+     
+    // Output the statistics
+    stats.elapsed = start.elapsed().as_secs();
+    let mut path = env::temp_dir();
+    path.push("locate");
+    path.set_extension("txt");
+    let j = unwrap_or_eprintln!(serde_json::to_string(&stats));
+    let mut writer = BufWriter::new(unwrap_or_eprintln!(File::open(path)));
+    unwrap_or_eprintln!(writer.write_all(j.as_bytes()));
 }
 
 #[cfg(test)]

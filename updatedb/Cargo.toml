@@ -7,4 +7,6 @@ edition = "2018"
 [dependencies]
 walkdir = "2"
 frcode = { path = "../frcode" }
-winapi = {version = "0.3.7", features = ["fileapi"] }
+winapi = {version = "0.3", features = ["fileapi"] }
+serde_json = "1.0"
+serde = {version = "1.0", features = ['derive']}
