@@ -5,12 +5,12 @@ use {
         std::env,
         winapi::um::fileapi::{GetLogicalDrives, GetDriveTypeW},
         winapi::shared::minwindef::DWORD,
-        std::fs::File,
+        std::fs::{File, remove_file, rename},
         std::io::{BufWriter, Write},
         serde::Serialize,
 };
 
-macro_rules! unwrap_or_eprintln {
+macro_rules! unwrap {
     ($expression:expr) => (
         match $expression {
             Ok(r) => r,
@@ -108,7 +108,7 @@ fn main() {
     path.push("dirlist");
     path.set_extension("tmp");
     {
-        let mut writer = BufWriter::new(unwrap_or_eprintln!(File::open(&path)));
+        let mut writer = BufWriter::new(unwrap!(File::open(&path)));
         for ld in ld_fix {
             let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
             for entry in walker {
@@ -116,11 +116,11 @@ fn main() {
                     let p = entry.path().to_str().unwrap();
                     stats.uncompressed = stats.uncompressed + p.len();
                     if m.is_dir() {
-                        unwrap_or_eprintln!(write!(writer, "{}\\\n", p));
+                        unwrap!(write!(writer, "{}\\\n", p));
                         stats.nb_dirs = stats.nb_dirs + 1;
                     }
                     else {
-                        unwrap_or_eprintln!(write!(writer, "{}\n", p));
+                        unwrap!(write!(writer, "{}\n", p));
                         stats.nb_files = stats.nb_files + 1;
                     }
                 }
@@ -132,20 +132,24 @@ fn main() {
     let mut out_file = env::temp_dir();
     out_file.push("locate");
     out_file.set_extension("tmp");
-    stats.compressed = unwrap_or_eprintln!(compress_file(&path, &out_file));
+    stats.compressed = unwrap!(compress_file(&path, &out_file));
 
     // Cleanup
-
-
+    unwrap!(remove_file(&path));
+    let mut db = env::temp_dir();
+    db.push("locate");
+    db.set_extension("db");
+    unwrap!(remove_file(&db));
+    unwrap!(rename(&out_file, &db));
 
     // Output the statistics
     stats.elapsed = start.elapsed().as_secs();
     let mut path = env::temp_dir();
     path.push("locate");
     path.set_extension("txt");
-    let j = unwrap_or_eprintln!(serde_json::to_string(&stats));
-    let mut writer = BufWriter::new(unwrap_or_eprintln!(File::open(path)));
-    unwrap_or_eprintln!(writer.write_all(j.as_bytes()));
+    let j = unwrap!(serde_json::to_string(&stats));
+    let mut writer = BufWriter::new(unwrap!(File::open(path)));
+    unwrap!(writer.write_all(j.as_bytes()));
 }
 
 #[cfg(test)]
