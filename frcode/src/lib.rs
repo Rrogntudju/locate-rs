@@ -205,7 +205,7 @@ pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<usize, Box<dyn E
     let reader = BufReader::new(File::open(in_file)?);
     let compressed_lines = FrCompress::new(reader);
     
-    let mut writer = BufWriter::new(File::open(out_file)?);
+    let mut writer = BufWriter::new(File::create(out_file)?);
     
     let mut ctr_bytes: usize = 0;
     for line in compressed_lines {
@@ -221,7 +221,7 @@ pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<usize, Box<dyn
     let reader = BufReader::new(File::open(in_file)?);
     let decompressed_lines = FrDecompress::new(reader);
 
-    let mut writer = BufWriter::new(File::open(out_file)?);
+    let mut writer = BufWriter::new(File::create(out_file)?);
     
     let mut ctr_bytes: usize = 0;
     for line in decompressed_lines {

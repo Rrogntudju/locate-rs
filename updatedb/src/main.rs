@@ -106,14 +106,18 @@ fn main() {
     let mut stats = Statistics::default();
     let mut path = env::temp_dir();
     path.push("dirlist");
-    path.set_extension("tmp");
+    path.set_extension("txt");
     {
-        let mut writer = BufWriter::new(unwrap!(File::open(&path)));
+        let mut writer = BufWriter::new(unwrap!(File::create(&path)));
         for ld in ld_fix {
             let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
             for entry in walker {
                 if let Ok(m) = entry.metadata() {
-                    let p = entry.path().to_str().unwrap();
+                    let p =
+                        match entry.path().to_str() {
+                            Some(p) => p,
+                            None => continue, /* path contains non-unicode sequence */
+                        };
                     stats.uncompressed = stats.uncompressed + p.len();
                     if m.is_dir() {
                         unwrap!(write!(writer, "{}\\\n", p));
@@ -148,7 +152,7 @@ fn main() {
     path.push("locate");
     path.set_extension("txt");
     let j = unwrap!(serde_json::to_string(&stats));
-    let mut writer = BufWriter::new(unwrap!(File::open(path)));
+    let mut writer = BufWriter::new(unwrap!(File::create(path)));
     unwrap!(writer.write_all(j.as_bytes()));
 }
 
