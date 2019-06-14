@@ -1,7 +1,7 @@
 use {
         std::time::Instant,
         walkdir::WalkDir,
-        frcode::FrCompress,
+        frcode::compress_file,
         std::env,
         winapi::um::fileapi::{GetLogicalDrives, GetDriveTypeW},
         winapi::shared::minwindef::DWORD,
@@ -104,11 +104,11 @@ fn main() {
 
     // Generate a dir list from each logical drives and save it to a temp file 
     let mut stats = Statistics::default();
+    let mut path = env::temp_dir();
+    path.push("dirlist");
+    path.set_extension("tmp");
     {
-        let mut path = env::temp_dir();
-        path.push("dirlist");
-        path.set_extension("tmp");
-        let mut writer = BufWriter::new(unwrap_or_eprintln!(File::open(path)));
+        let mut writer = BufWriter::new(unwrap_or_eprintln!(File::open(&path)));
         for ld in ld_fix {
             let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
             for entry in walker {
@@ -127,7 +127,17 @@ fn main() {
             }
         }
     }
-     
+
+    // Compress the dir list
+    let mut out_file = env::temp_dir();
+    out_file.push("locate");
+    out_file.set_extension("tmp");
+    stats.compressed = unwrap_or_eprintln!(compress_file(&path, &out_file));
+
+    // Cleanup
+
+
+
     // Output the statistics
     stats.elapsed = start.elapsed().as_secs();
     let mut path = env::temp_dir();
