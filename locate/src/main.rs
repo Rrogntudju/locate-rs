@@ -6,6 +6,7 @@ use {
         serde::Deserialize,
         clap::{App, Arg},
         num_format::{Locale, ToFormattedString},
+        glob::Pattern,
 };
 
 macro_rules! unwrap {
@@ -35,19 +36,14 @@ fn main() {
         -b, --basename         match only the base name of path names
         -c, --count            only print number of found entries 
         -h, --help             print this help
-        -i, --ignore-case      ignore case distinctions when matching patterns
         -l, --limit, -n LIMIT  limit output (or counting) to LIMIT entries
         -S, --statistics       don't search for entries, print statistics about each used database
-        -r, --regexp REGEXP    search for basic regexp REGEXP instead of patterns
-            --regex            patterns are extended regexps
-        -w, --wholename        match whole path name (default)
-
     */
     let matches = App::new("locate")
                     .arg(Arg::with_name("stats")
-                                .help("pas de recherche, affiche les statistiques de la base de données") 
-                                .short("S")                   
-                                .long("statistics")            
+                        .help("pas de recherche, affiche les statistiques de la base de données") 
+                        .short("S")                   
+                        .long("statistics")
                     )
                     .get_matches();
     
