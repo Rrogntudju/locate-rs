@@ -91,11 +91,26 @@ fn main() {
         return;
     }
     
-    let mut out = BufWriter::new(stdout());    // should be faster than looping on println!()
+    let mut out = BufWriter::new(stdout());    // should be faster than looping over println!()
     let mut ctr:usize = 0;  
-    let limit = matches.value_of("limit").unwrap().parse::<usize>();
-    for p in matches.values_of("pattern").unwrap() {
-        println!("«{}»", p);
+    let limit = matches.value_of("limit").unwrap().parse::<usize>().unwrap();
+    let patterns = matches.values_of("pattern").unwrap();
+    let mut db = env::temp_dir();
+    db.push("locate");
+    db.set_extension("db");
+    let reader = BufReader::new(unwrap!(File::open(db)));
+    let decompressed_lines = FrDecompress::new(reader);
+    for line in decompressed_lines {
+    
+        ctr = ctr + 1;
+        if ctr == limit {
+            break;
+        }
     }
-   
+
+    if matches.is_present("count") {
+        unwrap!(write!(out, "{}", ctr));
+    }
 }
+ 
+
