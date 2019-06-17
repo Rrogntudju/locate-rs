@@ -30,20 +30,48 @@ struct Statistics {
     elapsed: u64,
 }
 
+fn is_usize(v: String) -> Result<(), String> {
+    match v.parse::<usize>() {
+        Ok(_) => Ok(()),
+        Err(e) => Err(format!("la valeur « {} » de --limit n'est pas valide", e)),
+    }
+}
+
 fn main() {
-    /*
-        -A, --all              only print entries that match all patterns
-        -b, --basename         match only the base name of path names
-        -c, --count            only print number of found entries 
-        -h, --help             print this help
-        -l, --limit, -n LIMIT  limit output (or counting) to LIMIT entries
-        -S, --statistics       don't search for entries, print statistics about each used database
-    */
     let matches = App::new("locate")
                     .arg(Arg::with_name("stats")
-                        .help("pas de recherche, affiche les statistiques de la base de données") 
+                        .help("don't search for entries, print statistics about each used database") 
                         .short("S")                   
                         .long("statistics")
+                    )
+                    .arg(Arg::with_name("all")
+                        .help("only print entries that match all patterns") 
+                        .short("A")                   
+                        .long("all")
+                    )
+                    .arg(Arg::with_name("base")
+                        .help("match only the base name of path names") 
+                        .short("b")                   
+                        .long("basename")
+                    )
+                    .arg(Arg::with_name("count")
+                        .help("only print number of found entries") 
+                        .short("c")                   
+                        .long("count")
+                    )
+                    .arg(Arg::with_name("limit")
+                        .help("limit output (or counting) to LIMIT entries") 
+                        .short("l")
+                        .short("n")                 
+                        .long("limit")
+                        .takes_value(true)
+                        .validator(is_usize)
+                    )
+                    .arg(Arg::with_name("patterns")
+                        .index(1)
+                        .required_unless("stats")
+                        .min_values(1)
+                        .value_delimiter(" ")
                     )
                     .get_matches();
     
