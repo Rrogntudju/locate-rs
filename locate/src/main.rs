@@ -33,7 +33,7 @@ struct Statistics {
 fn is_usize(v: String) -> Result<(), String> {
     match v.parse::<usize>() {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!("la valeur « {} » de --limit n'est pas valide", e)),
+        Err(_) => Err(v),
     }
 }
 
@@ -62,13 +62,11 @@ fn main() {
                     .arg(Arg::with_name("limit")
                         .help("limit output (or counting) to LIMIT entries") 
                         .short("l")
-                        .short("n")                 
                         .long("limit")
                         .takes_value(true)
                         .validator(is_usize)
                     )
-                    .arg(Arg::with_name("patterns")
-                        .index(1)
+                    .arg(Arg::with_name("pattern")
                         .required_unless("stats")
                         .min_values(1)
                         .value_delimiter(" ")
