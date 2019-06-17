@@ -2,7 +2,7 @@ use {
         frcode::FrDecompress,
         std::env,
         std::fs::File,
-        std::io::BufReader,
+        std::io::{BufReader, BufWriter, Write, stdout},
         serde::Deserialize,
         clap::{App, Arg},
         num_format::{Locale, ToFormattedString},
@@ -38,6 +38,7 @@ fn is_usize(v: String) -> Result<(), String> {
 }
 
 fn main() {
+    let limit_max = std::usize::MAX.to_string();
     let matches = App::new("locate")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about each used database") 
@@ -64,6 +65,7 @@ fn main() {
                         .short("l")
                         .long("limit")
                         .takes_value(true)
+                        .default_value(&limit_max)
                         .validator(is_usize)
                     )
                     .arg(Arg::with_name("pattern")
@@ -73,7 +75,6 @@ fn main() {
                     )
                     .get_matches();
     
-
     if matches.is_present("stats") {
         let mut stat = env::temp_dir();
         stat.push("locate");
@@ -89,4 +90,12 @@ fn main() {
         println!("      {} min {} sec pour générer la base de données", stats.elapsed / 60, stats.elapsed % 60);
         return;
     }
+    
+    let mut out = BufWriter::new(stdout());    // should be faster than looping on println!()
+    let mut ctr:usize = 0;  
+    let limit = matches.value_of("limit").unwrap().parse::<usize>();
+    for p in matches.values_of("pattern").unwrap() {
+        println!("«{}»", p);
+    }
+   
 }
