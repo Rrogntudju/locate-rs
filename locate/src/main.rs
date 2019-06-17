@@ -95,21 +95,26 @@ fn main() {
     let mut ctr:usize = 0;  
     let limit = matches.value_of("limit").unwrap().parse::<usize>().unwrap();
     let patterns = matches.values_of("pattern").unwrap();
+    let is_count =  matches.is_present("count");
+    
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
     let reader = BufReader::new(unwrap!(File::open(db)));
-    let decompressed_lines = FrDecompress::new(reader);
-    for line in decompressed_lines {
-    
+    for line in FrDecompress::new(reader) {
+        let line = unwrap!(line);
+        if !is_count {
+            unwrap!(write!(out, "{}\n", line));
+        }
+
         ctr = ctr + 1;
         if ctr == limit {
             break;
         }
     }
 
-    if matches.is_present("count") {
-        unwrap!(write!(out, "{}", ctr));
+    if is_count {
+        unwrap!(write!(out, "{}\n", ctr));
     }
 }
  
