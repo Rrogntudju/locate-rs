@@ -75,13 +75,13 @@ fn main() {
                     )
                     .get_matches();
     
+    let loc = &Locale::fr_CA;
     if matches.is_present("stats") {
         let mut stat = env::temp_dir();
         stat.push("locate");
         stat.set_extension("txt");
         let reader = BufReader::new(unwrap!(File::open(stat)));
         let stats: Statistics = unwrap!(serde_json::from_reader(reader));
-        let loc = &Locale::fr_CA;
         println!("Base de données locate.db :");
         println!("      {} répertoires", stats.dirs.to_formatted_string(loc));
         println!("      {} fichiers", stats.files.to_formatted_string(loc));
@@ -114,7 +114,7 @@ fn main() {
     }
 
     if is_count {
-        unwrap!(write!(out, "{}\n", ctr));
+        unwrap!(write!(out, "{}\n", ctr.to_formatted_string(loc)));
     }
 }
  
