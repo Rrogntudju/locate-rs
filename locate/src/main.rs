@@ -94,20 +94,28 @@ fn main() {
     let mut out = BufWriter::new(stdout());    // should be faster than looping over println!()
     let mut ctr:usize = 0;  
     let limit = matches.value_of("limit").unwrap().parse::<usize>().unwrap();
-    let patterns = matches.values_of("pattern").unwrap();
     let is_count =  matches.is_present("count");
+    let patterns = matches.values_of("pattern").unwrap();
     
-    let patterns = patterns
-                    .map(|v: &str | {
-                            if v.starts_with("/") {
-                                v[1..].to_owned()   /* pattern «as is» */
-                            }
-                            else
-                            {
-                                format!("*{}*", v)  /* add implicit globbing */
-                            }
-                    })
-                    .collect::<Vec<String>>();
+    let mut glob_pat = vec!();
+    for pattern in patterns {
+        let pat = 
+            if pattern.starts_with("/") {
+                pattern[1..].to_owned()   /* pattern «as is» */
+            }
+            else
+            {
+                format!("*{}*", pattern)  /* implicit globbing */
+            };
+
+        match Pattern::new(&pat) {
+            Ok(p) => glob_pat.push(p),
+            Err(e) => {
+                eprintln!("«{}» : {}", pat, e);
+                return;
+            }
+        }
+    }
 
     let mut db = env::temp_dir();
     db.push("locate");
