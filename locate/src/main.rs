@@ -97,14 +97,27 @@ fn main() {
     let patterns = matches.values_of("pattern").unwrap();
     let is_count =  matches.is_present("count");
     
+    let patterns = patterns
+                    .map(|v: &str | {
+                            if v.starts_with("/") {
+                                v[1..].to_owned()   /* pattern «as is» */
+                            }
+                            else
+                            {
+                                format!("*{}*", v)  /* add implicit globbing */
+                            }
+                    })
+                    .collect::<Vec<String>>();
+
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
     let reader = BufReader::new(unwrap!(File::open(db)));
-    for line in FrDecompress::new(reader) {
-        let line = unwrap!(line);
+    for entry in FrDecompress::new(reader) {
+        let entry = unwrap!(entry);
+          
         if !is_count {
-            unwrap!(write!(out, "{}\n", line));
+            unwrap!(write!(out, "{}\n", entry));
         }
 
         ctr = ctr + 1;
