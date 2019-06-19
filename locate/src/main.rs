@@ -91,8 +91,6 @@ fn main() {
         return;
     }
     
-    let mut out = BufWriter::new(stdout());    // should be faster than looping over println!()
-    let mut ctr:usize = 0;  
     let limit = matches.value_of("limit").unwrap().parse::<usize>().unwrap();
     let is_count =  matches.is_present("count");
     let is_all =  matches.is_present("all");
@@ -133,6 +131,9 @@ fn main() {
     db.push("locate");
     db.set_extension("db");
     let reader = BufReader::new(unwrap!(File::open(db)));
+    let mut out = BufWriter::new(stdout());    // faster than looping over println!()
+    let mut ctr:usize = 0;
+
     for entry in FrDecompress::new(reader) {
         let entry = unwrap!(entry);
         let is_dir = entry.as_bytes().last().unwrap() == &b'\\';   // dir entries are terminated with a \
