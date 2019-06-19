@@ -40,6 +40,7 @@ fn is_usize(v: String) -> Result<(), String> {
 fn main() {
     let limit_max = std::usize::MAX.to_string();
     let matches = App::new("locate")
+                    .version("0.1.0")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about each used database") 
                         .short("s")                   
