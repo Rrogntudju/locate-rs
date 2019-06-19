@@ -102,11 +102,16 @@ fn main() {
     let mut glob_pat = vec!();
     for pattern in patterns {
         let pat = 
-            if pattern.as_bytes().first().unwrap() == &b'/' {
-                pattern[1..].to_owned()   // pattern «as is» 
+            if pattern.starts_with("/") {
+                pattern[1..].to_owned()     // pattern «as is» 
             }
             else {
-                format!("*{}*", pattern)  // implicit globbing 
+                if pattern.starts_with("*") || pattern.ends_with("*") {
+                    pattern.to_owned()      // pattern «as is» 
+                }
+                else {
+                    format!("*{}*", pattern)  // implicit globbing 
+                }
             };
 
         match Pattern::new(&pat) {
