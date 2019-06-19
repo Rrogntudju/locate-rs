@@ -95,12 +95,14 @@ fn main() {
     let mut ctr:usize = 0;  
     let limit = matches.value_of("limit").unwrap().parse::<usize>().unwrap();
     let is_count =  matches.is_present("count");
+    let is_all =  matches.is_present("all");
+    let is_base = matches.is_present("base");
     let patterns = matches.values_of("pattern").unwrap();
     
     let mut glob_pat = vec!();
     for pattern in patterns {
         let pat = 
-            if pattern.starts_with("/") {
+            if pattern.as_bytes().first().unwrap() == &b'/' {
                 pattern[1..].to_owned()   /* pattern «as is» */
             }
             else
@@ -123,9 +125,47 @@ fn main() {
     let reader = BufReader::new(unwrap!(File::open(db)));
     for entry in FrDecompress::new(reader) {
         let entry = unwrap!(entry);
-          
+        let is_dir = entry.as_bytes().last().unwrap() == &b'\\';   // dir entries are terminated with a \
+        let entry_test =
+            if is_base {
+                if is_dir {
+                    continue;   // no need to match on a dir entry
+                }
+                else {
+                    // match on the basename
+                    let idx = entry.as_bytes().iter().rev().position(|b| b == &b'\\').unwrap(); // find the index of the last \
+                    &entry[idx + 1..]   // basename
+                }
+            }
+            else {
+                if is_dir {
+                    &entry[..entry.len() - 1]   // dir entry minus the \
+                }
+                else {
+                    &entry
+                }
+            };
+
+        if is_all {
+            if !glob_pat.iter().all(|p| p.matches(&entry_test)) {
+                continue;
+            } 
+        }
+        else {
+            if !glob_pat.iter().any(|p| p.matches(&entry_test)) {
+                continue;
+            } 
+        }
+
         if !is_count {
-            unwrap!(write!(out, "{}\n", entry));
+            let entry_out =
+                if is_dir {
+                    &entry[..entry.len() - 1]   // dir entry minus the \
+                }
+                else {
+                    &entry
+                };
+            unwrap!(write!(out, "{}\n", entry_out));
         }
 
         ctr = ctr + 1;
