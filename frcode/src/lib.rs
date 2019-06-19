@@ -133,7 +133,7 @@ impl FrDecompress {
         }
         else {
             let count_2b = bytes_mut.take(2).filter_map(|b| b.ok()).collect::<Vec<u8>>();
-            if count_1b.len() != 2 {
+            if count_2b.len() != 2 {
                 return None;
             }
             let mut buf = [0,0];

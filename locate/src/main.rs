@@ -42,12 +42,12 @@ fn main() {
     let matches = App::new("locate")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about each used database") 
-                        .short("S")                   
+                        .short("s")                   
                         .long("statistics")
                     )
                     .arg(Arg::with_name("all")
                         .help("only print entries that match all patterns") 
-                        .short("A")                   
+                        .short("a")                   
                         .long("all")
                     )
                     .arg(Arg::with_name("base")
@@ -179,7 +179,7 @@ fn main() {
             break;
         }
     }
-
+    
     if is_count {
         unwrap!(write!(out, "{}\n", ctr.to_formatted_string(loc)));
     }
