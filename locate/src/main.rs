@@ -6,7 +6,7 @@ use {
         serde::Deserialize,
         clap::{App, Arg},
         num_format::{Locale, ToFormattedString},
-        glob::Pattern,
+        glob::{Pattern, MatchOptions},
 };
 
 macro_rules! unwrap {
@@ -103,11 +103,11 @@ fn main() {
     for pattern in patterns {
         let pat = 
             if pattern.as_bytes().first().unwrap() == &b'/' {
-                pattern[1..].to_owned()   /* pattern «as is» */
+                pattern[1..].to_owned()   // pattern «as is» 
             }
             else
             {
-                format!("*{}*", pattern)  /* implicit globbing */
+                format!("*{}*", pattern)  // implicit globbing 
             };
 
         match Pattern::new(&pat) {
@@ -118,6 +118,12 @@ fn main() {
             }
         }
     }
+
+    let mo = MatchOptions {
+        case_sensitive: false,
+        require_literal_separator: false,
+        require_literal_leading_dot: false
+    };
 
     let mut db = env::temp_dir();
     db.push("locate");
@@ -134,7 +140,7 @@ fn main() {
                 else {
                     // match on the basename
                     let idx = entry.as_bytes().iter().rev().position(|b| b == &b'\\').unwrap(); // find the index of the last \
-                    &entry[idx + 1..]   // basename
+                    &entry[entry.len() - idx..]   // basename
                 }
             }
             else {
@@ -147,12 +153,12 @@ fn main() {
             };
 
         if is_all {
-            if !glob_pat.iter().all(|p| p.matches(&entry_test)) {
+            if !glob_pat.iter().all(|p| p.matches_with(&entry_test, mo)) {
                 continue;
             } 
         }
         else {
-            if !glob_pat.iter().any(|p| p.matches(&entry_test)) {
+            if !glob_pat.iter().any(|p| p.matches_with(&entry_test, mo)) {
                 continue;
             } 
         }
