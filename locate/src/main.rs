@@ -105,8 +105,7 @@ fn main() {
             if pattern.as_bytes().first().unwrap() == &b'/' {
                 pattern[1..].to_owned()   // pattern «as is» 
             }
-            else
-            {
+            else {
                 format!("*{}*", pattern)  // implicit globbing 
             };
 
