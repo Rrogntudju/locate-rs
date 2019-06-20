@@ -42,7 +42,7 @@ fn main() {
     let matches = App::new("locate")
                     .version("0.1.0")
                     .arg(Arg::with_name("stats")
-                        .help("don't search for entries, print statistics about each used database") 
+                        .help("don't search for entries, print statistics about database") 
                         .short("s")                   
                         .long("statistics")
                     )
