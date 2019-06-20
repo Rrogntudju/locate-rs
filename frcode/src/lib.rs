@@ -249,14 +249,16 @@ mod tests {
             "D:\\ماريو.txt",
             concat!("E:\\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "\\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-                    "\\cccccccccccccccccccccccccccccccccccccccccccccccccc"
+                    "\\cccccccccccccccccccccccccccccccccccccccccccccccccc",
+                    "\\dddddddddddddddddddddddddddddddddddddddddddddddddd",
             ),
             concat!("E:\\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "\\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
                     "\\cccccccccccccccccccccccccccccccccccccccccccccccccc",
-                    "\\d"
+                    "\\dddddddddddddddddddddddddddddddddddddddddddddddddd",
+                    "\\e",
             ),
-            "E:\\e", 
+            "E:\\f", 
             );
 
         let lines = Cursor::new(dirlist.join("\n"));
