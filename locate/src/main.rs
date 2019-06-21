@@ -93,18 +93,18 @@ fn main() {
     let is_limit =  matches.is_present("limit");
     let limit =
         if is_limit {
-            let limit = matches.value_of("limit").unwrap().parse::<usize>().unwrap();
-            if limit == 0 {
-                return;
-            }
-            else {
-                limit
-            }
+            matches.value_of("limit").unwrap().parse::<usize>().unwrap()
         }
         else {
             0
         };
     let is_count =  matches.is_present("count");
+    if is_limit && limit == 0 {
+        if is_count {
+            println!("0");
+        }
+        return; // nothing to do
+    }
     let is_all =  matches.is_present("all");
     let is_base = matches.is_present("base");
     let patterns = matches.values_of("pattern").unwrap();
@@ -143,7 +143,7 @@ fn main() {
     db.push("locate");
     db.set_extension("db");
     let reader = BufReader::new(unwrap!(File::open(db)));
-    let mut out = BufWriter::new(stdout());    // faster than looping over println!()
+    let mut out = BufWriter::new(stdout());    // faster than looping over println!()       
     let mut ctr:usize = 0;
 
     for entry in FrDecompress::new(reader) {
@@ -192,10 +192,8 @@ fn main() {
         }
 
         ctr = ctr + 1;
-        if is_limit {
-            if ctr == limit {
-                break;
-            }
+        if is_limit && ctr == limit {
+            break;
         }
     }
     
