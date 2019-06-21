@@ -93,7 +93,13 @@ fn main() {
     let is_limit =  matches.is_present("limit");
     let limit =
         if is_limit {
-            matches.value_of("limit").unwrap().parse::<usize>().unwrap()
+            let limit = matches.value_of("limit").unwrap().parse::<usize>().unwrap();
+            if limit == 0 {
+                return;
+            }
+            else {
+                limit
+            }
         }
         else {
             0
