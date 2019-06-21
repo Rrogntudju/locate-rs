@@ -38,7 +38,6 @@ fn is_usize(v: String) -> Result<(), String> {
 }
 
 fn main() {
-    let limit_max = std::usize::MAX.to_string();
     let matches = App::new("locate")
                     .version("0.1.0")
                     .arg(Arg::with_name("stats")
@@ -66,7 +65,6 @@ fn main() {
                         .short("l")
                         .long("limit")
                         .takes_value(true)
-                        .default_value(&limit_max)
                         .validator(is_usize)
                     )
                     .arg(Arg::with_name("pattern")
@@ -92,7 +90,14 @@ fn main() {
         return;
     }
     
-    let limit = matches.value_of("limit").unwrap().parse::<usize>().unwrap();
+    let is_limit =  matches.is_present("limit");
+    let limit =
+        if is_limit {
+            matches.value_of("limit").unwrap().parse::<usize>().unwrap()
+        }
+        else {
+            0
+        };
     let is_count =  matches.is_present("count");
     let is_all =  matches.is_present("all");
     let is_base = matches.is_present("base");
@@ -181,8 +186,10 @@ fn main() {
         }
 
         ctr = ctr + 1;
-        if ctr == limit {
-            break;
+        if is_limit {
+            if ctr == limit {
+                break;
+            }
         }
     }
     
