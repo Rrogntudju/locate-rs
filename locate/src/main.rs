@@ -134,7 +134,7 @@ fn main() {
     }
 
     let mo = MatchOptions {
-        case_sensitive: false,
+        case_sensitive: false,  // warning: case-insensitive for ASCII characters only (still case-sensitive for é É, for example)
         require_literal_separator: false,
         require_literal_leading_dot: false
     };
@@ -201,5 +201,3 @@ fn main() {
         unwrap!(write!(out, "{}\n", ctr.to_formatted_string(loc)));
     }
 }
- 
-
