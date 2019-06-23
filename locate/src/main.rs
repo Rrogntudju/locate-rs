@@ -156,7 +156,7 @@ fn main() {
         }
     });
 
-    for entry in rx.recv() {
+    for entry in rx {
         let is_dir = entry.as_bytes().last().unwrap() == &b'\\';   // dir entries are terminated with a \
         let entry_test =
             if is_base {
