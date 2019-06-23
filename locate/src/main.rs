@@ -152,7 +152,15 @@ fn main() {
     thread::spawn(move || {
         let decompressed_entries = FrDecompress::new(BufReader::new(unwrap!(File::open(db))));
         for entry in decompressed_entries {
-            unwrap!(tx.send(unwrap!(entry)));
+            match tx.send(unwrap!(entry)) {
+                Ok(_) => (),
+                Err(e) => {
+                    if !is_limit {
+                        eprintln!("{}", e);
+                    }
+                    return; 
+                }
+            }
         }
     });
 
