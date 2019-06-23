@@ -136,7 +136,7 @@ fn main() {
     }
 
     let mo = MatchOptions {
-        case_sensitive: false,  // case-insensitive for ASCII characters only. Going around this with to_lowercase() is too costly.
+        case_sensitive: false,  // case-insensitive for ASCII characters only. Working around this issue with to_lowercase() is too costly.
         require_literal_separator: false,
         require_literal_leading_dot: false
     };
