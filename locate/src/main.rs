@@ -3,6 +3,8 @@ use {
         std::env,
         std::fs::File,
         std::io::{BufReader, BufWriter, Write, stdout},
+        std::thread,
+        std::sync::mpsc,
         serde::Deserialize,
         clap::{App, Arg},
         num_format::{Locale, ToFormattedString},
@@ -39,7 +41,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() {
     let matches = App::new("locate")
-                    .version("0.1.0")
+                    .version("0.3.0")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about database") 
                         .short("s")                   
@@ -134,7 +136,7 @@ fn main() {
     }
 
     let mo = MatchOptions {
-        case_sensitive: false,  // warning: case-insensitive for ASCII characters only (still case-sensitive for é É, for example)
+        case_sensitive: false,  // case-insensitive for ASCII characters only. Going around this with to_lowercase() is too costly.
         require_literal_separator: false,
         require_literal_leading_dot: false
     };
@@ -142,12 +144,19 @@ fn main() {
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
-    let reader = BufReader::new(unwrap!(File::open(db)));
     let mut out = BufWriter::new(stdout());    // faster than looping over println!()       
     let mut ctr:usize = 0;
 
-    for entry in FrDecompress::new(reader) {
-        let entry = unwrap!(entry);
+    // run the FrDecompress iterator on his own thread
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let decompressed_entries = FrDecompress::new(BufReader::new(unwrap!(File::open(db))));
+        for entry in decompressed_entries {
+            unwrap!(tx.send(unwrap!(entry)));
+        }
+    });
+
+    for entry in rx.recv() {
         let is_dir = entry.as_bytes().last().unwrap() == &b'\\';   // dir entries are terminated with a \
         let entry_test =
             if is_base {
