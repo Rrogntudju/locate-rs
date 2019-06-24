@@ -41,7 +41,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() {
     let matches = App::new("locate")
-                    .version("0.3.0")
+                    .version("0.3.1")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about database") 
                         .short("s")                   
@@ -205,7 +205,8 @@ fn main() {
                 else {
                     &entry
                 };
-            unwrap!(write!(out, "{}\n", entry_out));
+            unwrap!(out.write_all(entry_out.as_bytes()));
+            unwrap!(out.write_all(&[b'\n']));
         }
 
         ctr = ctr + 1;
