@@ -206,7 +206,7 @@ fn main() {
                     &entry
                 };
             unwrap!(out.write_all(entry_out.as_bytes()));
-            unwrap!(out.write_all(&[b'\n']));
+            unwrap!(out.write_all(b"\n"));
         }
 
         ctr = ctr + 1;
