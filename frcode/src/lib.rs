@@ -65,7 +65,7 @@ impl Iterator for FrCompress {
                     let mut ctr: u16 = 0;
                     for (ch_line, ch_prec) in line.chars().zip(self.prec.chars()) {
                         if ch_line == ch_prec {
-                            ctr = ctr + 1;
+                            ctr += 1;
                         }
                         else {
                             break;

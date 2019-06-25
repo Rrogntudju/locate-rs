@@ -54,7 +54,7 @@ impl Iterator for DwordBits {
         }
 
         let bit = self.dword & (1 << self.ctr) != 0;
-        self.ctr = self.ctr + 1;
+        self.ctr += 1;
 
         Some(bit)
     }
@@ -119,11 +119,11 @@ fn main() {
                         };
                     if m.is_dir() {
                         unwrap!(write!(writer, "{}\\\n", p));
-                        stats.dirs = stats.dirs + 1;
+                        stats.dirs += 1;
                     }
                     else {
                         unwrap!(write!(writer, "{}\n", p));
-                        stats.files = stats.files + 1;
+                        stats.files += 1;
                         stats.files_bytes = stats.files_bytes + p.len();
                     }
                 }

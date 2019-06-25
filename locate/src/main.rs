@@ -209,7 +209,7 @@ fn main() {
             unwrap!(out.write_all(b"\n"));
         }
 
-        ctr = ctr + 1;
+        ctr += 1;
         if is_limit && ctr == limit {
             break;
         }
