@@ -124,7 +124,7 @@ fn main() {
                     else {
                         unwrap!(write!(writer, "{}\n", p));
                         stats.files += 1;
-                        stats.files_bytes = stats.files_bytes + p.len();
+                        stats.files_bytes += p.len();
                     }
                 }
             }

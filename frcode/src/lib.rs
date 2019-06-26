@@ -211,7 +211,7 @@ pub fn compress_file(in_file: &Path, out_file: &Path) -> Result<usize, Box<dyn E
     for line in compressed_lines {
         let line = line?;
         writer.write_all(&line)?;
-        ctr_bytes = ctr_bytes + line.len();
+        ctr_bytes += line.len();
     }
     
     Ok(ctr_bytes)
@@ -227,7 +227,7 @@ pub fn decompress_file(in_file: &Path, out_file: &Path) -> Result<usize, Box<dyn
     for line in decompressed_lines {
         let line = line?;
         writer.write_all(line.as_bytes())?;
-        ctr_bytes = ctr_bytes + line.len();
+        ctr_bytes += line.len();
     }
     
     Ok(ctr_bytes)
