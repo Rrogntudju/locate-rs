@@ -112,11 +112,7 @@ fn main() {
             let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
             for entry in walker {
                 if let Ok(m) = entry.metadata() {
-                    let p =
-                        match entry.path().to_str() {
-                            Some(p) => p,
-                            None => continue, /* path contains a non-unicode sequence */
-                        };
+                    let p = entry.path().to_string_lossy(); // path may contain non-unicode sequence
                     if m.is_dir() {
                         unwrap!(write!(writer, "{}\\\n", p));
                         stats.dirs += 1;
