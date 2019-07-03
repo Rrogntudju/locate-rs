@@ -134,9 +134,12 @@ fn main() {
             }
         }
     }
-
+    
+    // Case-insensitive for ASCII characters only.
+    // Working around this issue with to_lowercase() is too costly.
+    // Use a pattern like [éÉ] as a workaround.
     let mo = MatchOptions {
-        case_sensitive: false,  // case-insensitive for ASCII characters only. Working around this issue with to_lowercase() is too costly.
+        case_sensitive: false,  
         require_literal_separator: false,
         require_literal_leading_dot: false
     };
