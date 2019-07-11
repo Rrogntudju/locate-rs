@@ -135,19 +135,13 @@ fn main() {
 
     // Cleanup
     unwrap!(remove_file(&dirlist));
-    let mut db2 = env::temp_dir();
-    db2.push("locate");
-    db2.set_extension("db2");
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
     if db.is_file() {
-        unwrap!(rename(&db, &db2));
+        unwrap!(remove_file(&db));
     }
     unwrap!(rename(&db1, &db));
-    if db2.is_file() {
-        unwrap!(remove_file(&db2));
-    }
     
     // Output the statistics
     stats.elapsed = start.elapsed().as_secs();
