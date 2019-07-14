@@ -41,7 +41,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() {
     let matches = App::new("locate")
-                    .version("0.3.1")
+                    .version("0.4.0")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about database") 
                         .short("s")                   
@@ -72,7 +72,6 @@ fn main() {
                     .arg(Arg::with_name("pattern")
                         .required_unless("stats")
                         .min_values(1)
-                        .value_delimiter(" ")
                     )
                     .get_matches();
     
