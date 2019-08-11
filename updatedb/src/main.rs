@@ -7,7 +7,7 @@ use {
         winapi::shared::minwindef::DWORD,
         std::fs::{File, remove_file, rename},
         std::io::{BufWriter, Write},
-        serde::Serialize,
+        serde_json::json,
 };
 
 macro_rules! unwrap {
@@ -22,7 +22,7 @@ macro_rules! unwrap {
     )
 }
 
-#[derive(Default, Serialize)]
+#[derive(Default)]
 struct Statistics {
     dirs: usize,
     files: usize,
@@ -148,6 +148,13 @@ fn main() {
     let mut path = env::temp_dir();
     path.push("locate");
     path.set_extension("txt");
+    let stats = json!({
+            "dirs": stats.dirs, 
+            "files": stats.files,
+            "files_bytes": stats.files_bytes,
+            "db_size": stats.db_size,
+            "elapsed": stats.elapsed
+            });
     let j = unwrap!(serde_json::to_string(&stats));
     let mut writer = BufWriter::new(unwrap!(File::create(path)));
     unwrap!(writer.write_all(j.as_bytes()));

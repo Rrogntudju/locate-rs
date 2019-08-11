@@ -5,7 +5,7 @@ use {
         std::io::{BufReader, BufWriter, Write, stdout},
         std::thread,
         std::sync::mpsc,
-        serde::Deserialize,
+        serde_json::Value,
         clap::{App, Arg},
         num_format::{Locale, ToFormattedString},
         glob::{Pattern, MatchOptions},
@@ -23,15 +23,6 @@ macro_rules! unwrap {
     )
 }
 
-#[derive(Deserialize)]
-struct Statistics {
-    dirs: usize,
-    files: usize,
-    files_bytes: usize,
-    db_size: usize,
-    elapsed: u64,
-}
-
 fn is_usize(v: String) -> Result<(), String> {
     match v.parse::<usize>() {
         Ok(_) => Ok(()),
@@ -41,7 +32,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() {
     let matches = App::new("locate")
-                    .version("0.4.0")
+                    .version("0.4.1")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about database") 
                         .short("s")                   
@@ -80,14 +71,23 @@ fn main() {
         let mut stat = env::temp_dir();
         stat.push("locate");
         stat.set_extension("txt");
+        if !stat.is_file() {
+            eprintln!("La base de données n'existe pas. Exécuter updatedb.exe");
+            return;
+        }
         let reader = BufReader::new(unwrap!(File::open(stat)));
-        let stats: Statistics = unwrap!(serde_json::from_reader(reader));
+        let stats: Value = unwrap!(serde_json::from_reader(reader));
+        let dirs = stats["dirs"].as_u64().unwrap();
+        let files = stats["files"].as_u64().unwrap();
+        let files_bytes = stats["files_bytes"].as_u64().unwrap();
+        let db_size = stats["db_size"].as_u64().unwrap();
+        let elapsed = stats["elapsed"].as_u64().unwrap();
         println!("Base de données locate.db :");
-        println!("      {} répertoires", stats.dirs.to_formatted_string(loc));
-        println!("      {} fichiers", stats.files.to_formatted_string(loc));
-        println!("      {} octets dans les noms de fichier", stats.files_bytes.to_formatted_string(loc));
-        println!("      {} octets utilisés pour stocker la base de données", stats.db_size.to_formatted_string(loc));
-        println!("      {} min {} sec pour générer la base de données", stats.elapsed / 60, stats.elapsed % 60);
+        println!("      {} répertoires", dirs.to_formatted_string(loc));
+        println!("      {} fichiers", files.to_formatted_string(loc));
+        println!("      {} octets dans les noms de fichier", files_bytes.to_formatted_string(loc));
+        println!("      {} octets utilisés pour stocker la base de données", db_size.to_formatted_string(loc));
+        println!("      {} min {} sec pour générer la base de données", elapsed / 60, elapsed % 60);
         return;
     }
     
@@ -146,6 +146,10 @@ fn main() {
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
+    if !db.is_file() {
+        eprintln!("La base de données n'existe pas. Exécuter updatedb.exe");
+        return;
+    }
     let mut out = BufWriter::new(stdout());    // faster than looping over println!()       
     let mut ctr:usize = 0;
 
