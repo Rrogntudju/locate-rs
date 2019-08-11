@@ -145,17 +145,17 @@ fn main() {
     
     // Output the statistics
     stats.elapsed = start.elapsed().as_secs();
-    let mut path = env::temp_dir();
-    path.push("locate");
-    path.set_extension("txt");
     let stats = json!({
             "dirs": stats.dirs, 
             "files": stats.files,
             "files_bytes": stats.files_bytes,
             "db_size": stats.db_size,
-            "elapsed": stats.elapsed
+            "elapsed": stats.elapsed,
             });
     let j = unwrap!(serde_json::to_string(&stats));
+    let mut path = env::temp_dir();
+    path.push("locate");
+    path.set_extension("txt");
     let mut writer = BufWriter::new(unwrap!(File::create(path)));
     unwrap!(writer.write_all(j.as_bytes()));
 }
