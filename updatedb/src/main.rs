@@ -151,7 +151,7 @@ fn main() {
             "files_bytes": stats.files_bytes,
             "db_size": stats.db_size,
             "elapsed": stats.elapsed,
-            });
+    });
     let j = unwrap!(serde_json::to_string(&stats));
     let mut path = env::temp_dir();
     path.push("locate");
