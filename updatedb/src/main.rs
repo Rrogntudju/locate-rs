@@ -146,11 +146,11 @@ fn main() {
     // Output the statistics
     stats.elapsed = start.elapsed().as_secs();
     let stats = json!({
-            "dirs": stats.dirs, 
-            "files": stats.files,
-            "files_bytes": stats.files_bytes,
-            "db_size": stats.db_size,
-            "elapsed": stats.elapsed,
+        "dirs": stats.dirs, 
+        "files": stats.files,
+        "files_bytes": stats.files_bytes,
+        "db_size": stats.db_size,
+        "elapsed": stats.elapsed,
     });
     let j = unwrap!(serde_json::to_string(&stats));
     let mut path = env::temp_dir();
