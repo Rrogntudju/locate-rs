@@ -158,14 +158,11 @@ fn main() {
     thread::spawn(move || {
         let decompressed_entries = FrDecompress::new(BufReader::new(unwrap!(File::open(db))));
         for entry in decompressed_entries {
-            match tx.send(unwrap!(entry)) {
-                Ok(_) => (),
-                Err(e) => {
-                    if !is_limit {
-                        eprintln!("{}", e);
-                    }
-                    return; 
+            if let Err(e) = tx.send(unwrap!(entry)) {
+                if !is_limit {
+                    eprintln!("{}", e);
                 }
+                return; 
             }
         }
     });
