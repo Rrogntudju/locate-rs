@@ -150,7 +150,8 @@ fn main() {
         eprintln!("La base de données n'existe pas. Exécuter updatedb.exe");
         return;
     }
-    let mut out = BufWriter::new(stdout());    // faster than looping over println!()       
+    let stdout = stdout();
+    let mut out = BufWriter::new(stdout.lock());      
     let mut ctr:usize = 0;
 
     // run the FrDecompress iterator on his own thread
