@@ -191,12 +191,12 @@ fn main() {
             };
 
         if is_all {
-            if !glob_pat.iter().all(|p| p.matches_with(&entry_test, mo)) {
+            if !glob_pat.iter().all(|p| p.matches_with(entry_test, mo)) {
                 continue;
             } 
         }
         else {
-            if !glob_pat.iter().any(|p| p.matches_with(&entry_test, mo)) {
+            if !glob_pat.iter().any(|p| p.matches_with(entry_test, mo)) {
                 continue;
             } 
         }
