@@ -177,10 +177,10 @@ fn main() {
         let v: Vec<&str> = entry.rsplitn(2, '\\').collect();
         let entry_test = 
             if is_base {
-                v[0] // basename
+                v[0]    // basename
             }
             else if is_dir {
-                v[1]  // dir entry minus the \
+                v[1]    // dir entry minus the \
             }
             else {
                 &entry
