@@ -32,7 +32,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() {
     let matches = App::new("locate")
-                    .version("0.4.2")
+                    .version("0.4.3")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about database") 
                         .short("s")                   
@@ -114,7 +114,7 @@ fn main() {
     for pattern in patterns {
         let pat = 
             if pattern.starts_with("/") {
-                pattern[1..].to_owned()     // pattern «as is» 
+                pattern.splitn(2, '/').collect::<Vec<&str>>()[1].to_owned()     // pattern «as is» 
             }
             else {
                 if pattern.starts_with("*") || pattern.ends_with("*") {
@@ -168,26 +168,22 @@ fn main() {
         }
     });
 
-    for entry in rx {
-        let is_dir = entry.as_bytes().last().unwrap() == &b'\\';   // dir entries are terminated with a \
-        let entry_test =
+ for entry in rx {
+        let is_dir = entry.ends_with('\\');   // dir entries are terminated with a \
+        if is_base && is_dir {
+            continue;    // no need to match on a dir entry
+        }
+
+        let v: Vec<&str> = entry.rsplitn(2, '\\').collect();
+        let entry_test = 
             if is_base {
-                if is_dir {
-                    continue;   // no need to match on a dir entry
-                }
-                else {
-                    // match on the basename
-                    let idx = entry.as_bytes().iter().rev().position(|b| b == &b'\\').unwrap(); // find the index of the last \
-                    &entry[entry.len() - idx..]   // basename
-                }
+                v[0] // basename
+            }
+            else if is_dir {
+                v[1]  // dir entry minus the \
             }
             else {
-                if is_dir {
-                    &entry[..entry.len() - 1]   // dir entry minus the \
-                }
-                else {
-                    &entry
-                }
+                &entry
             };
 
         if is_all {
@@ -204,7 +200,7 @@ fn main() {
         if !is_count {
             let entry_out =
                 if is_dir {
-                    &entry[..entry.len() - 1]   // dir entry minus the \
+                    entry_test   // dir entry minus the \
                 }
                 else {
                     &entry
