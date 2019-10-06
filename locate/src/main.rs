@@ -170,7 +170,7 @@ fn main() {
 
  for entry in rx {
         let is_dir = entry.ends_with('\\');   // dir entries are terminated with a \
-        if is_base && is_dir {
+        if is_dir && is_base {
             continue;    // no need to match on a dir entry
         }
 
