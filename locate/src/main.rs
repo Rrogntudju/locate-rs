@@ -32,7 +32,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() {
     let matches = App::new("locate")
-                    .version("0.4.3")
+                    .version("0.5.0")
                     .arg(Arg::with_name("stats")
                         .help("don't search for entries, print statistics about database") 
                         .short("s")                   
@@ -170,17 +170,16 @@ fn main() {
 
  for entry in rx {
         let is_dir = entry.ends_with('\\');   // dir entries are terminated with a \
-        if is_dir && is_base {
+        if is_base && is_dir {
             continue;    // no need to match on a dir entry
         }
 
-        let v: Vec<&str> = entry.rsplitn(2, '\\').collect();
         let entry_test = 
             if is_base {
-                v[0]    // basename
+                entry.rsplitn(2, '\\').collect::<Vec<&str>>()[0]    // basename
             }
             else if is_dir {
-                v[1]    // dir entry minus the \
+                entry.rsplitn(2, '\\').collect::<Vec<&str>>()[1]    // dir entry minus the \    
             }
             else {
                 &entry
