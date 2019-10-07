@@ -168,7 +168,7 @@ fn main() {
         }
     });
 
- for entry in rx {
+    for entry in rx {
         let is_dir = entry.ends_with('\\');   // dir entries are terminated with a \
         if is_base && is_dir {
             continue;    // no need to match on a dir entry
