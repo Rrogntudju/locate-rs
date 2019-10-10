@@ -1,10 +1,19 @@
-fn main() {
-    use {
-        std::time::Instant,
-        std::process::{Command, exit},
-        std::env,
-    };
+use {
+    std::time::Instant,
+    std::process::{Command, exit},
+    std::sync::Arc,
+    std::env,
+    ctrlc::set_handler,
+};
 
+fn time_and_exit(elapsed: u128, exit_code: i32) {
+    let s = elapsed / 1_000;
+    let m = s / 60;
+    println!("\n{}m{}.{}s", m,  s, elapsed % 1_000);
+    exit(exit_code);
+}
+
+fn main() {
     let args: Vec<String> = env::args().collect();
     let mut elapsed = 0;
     let mut exit_code = 0;
@@ -15,10 +24,16 @@ fn main() {
             cmd.arg(arg);
         }
 
-        let start = Instant::now();
+        let start = Arc::new(Instant::now());
+        let s = start.clone();
+        set_handler(move || {
+            time_and_exit(s.elapsed().as_millis(), 0);
+        })
+        .expect("Error setting Ctrl-C handler");
+
         let status = cmd.status();
         elapsed = start.elapsed().as_millis();
-        
+
         match status {
             Ok(s) => {
                 if let Some(code) = s.code() {
@@ -34,8 +49,5 @@ fn main() {
         }
     }
 
-    let s = elapsed / 1_000;
-    let m = s / 60;
-    println!("{}m{}.{}s", m,  s, elapsed % 1_000);
-    exit(exit_code);
+    time_and_exit(elapsed, exit_code);
 }

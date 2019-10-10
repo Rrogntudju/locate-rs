@@ -5,3 +5,4 @@ authors = ["Rrogntudju"]
 edition = "2018"
 
 [dependencies]
+ctrlc = "3"
