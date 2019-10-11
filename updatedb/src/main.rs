@@ -1,25 +1,25 @@
 use {
-        std::time::Instant,
-        walkdir::WalkDir,
-        frcode::compress_file,
-        std::env,
-        winapi::um::fileapi::{GetLogicalDrives, GetDriveTypeW},
-        winapi::shared::minwindef::DWORD,
-        std::fs::{File, remove_file, rename},
-        std::io::{BufWriter, Write},
-        serde_json::json,
+    frcode::compress_file,
+    serde_json::json,
+    std::env,
+    std::fs::{remove_file, rename, File},
+    std::io::{BufWriter, Write},
+    std::time::Instant,
+    walkdir::WalkDir,
+    winapi::shared::minwindef::DWORD,
+    winapi::um::fileapi::{GetDriveTypeW, GetLogicalDrives},
 };
 
 macro_rules! unwrap {
-    ($expression:expr) => (
+    ($expression:expr) => {
         match $expression {
             Ok(r) => r,
             Err(e) => {
-                eprintln!("{}", e); 
+                eprintln!("{}", e);
                 return;
             }
         }
-    )
+    };
 }
 
 #[derive(Default)]
@@ -37,7 +37,7 @@ struct DwordBits {
 }
 
 impl DwordBits {
-    fn new (dword: DWORD) -> DwordBits {
+    fn new(dword: DWORD) -> DwordBits {
         DwordBits {
             dword: dword,
             ctr: 0,
@@ -68,39 +68,39 @@ fn main() {
     if ld_bits == 0 {
         match std::io::Error::last_os_error().raw_os_error() {
             Some(e) => eprintln!("GetLogicalDrives: {}", e),
-            None    => eprintln!("GetLogicalDrives: DOH!"),
+            None => eprintln!("GetLogicalDrives: DOH!"),
         }
         return;
     }
 
     let ld_all = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                    .chars()
-                    .map(|c| { 
-                        let mut dr = String::new(); 
-                        dr.push(c); 
-                        dr + ":\\" 
-                    })
-                    .collect::<Vec<String>>();
+        .chars()
+        .map(|c| {
+            let mut dr = String::new();
+            dr.push(c);
+            dr + ":\\"
+        })
+        .collect::<Vec<String>>();
 
     let ld_fix = DwordBits::new(ld_bits)
-                    .zip(ld_all)
-                    .filter_map(|(b, ld)| {
-                        if !b {
-                            return None;  // not a logical drive
-                        }
-                        // Convert an UTF-8 string to a null-delimited UTF-16 string
-                        let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
-                        ld_utf16.push(0); 
-                        let ld_type = unsafe { GetDriveTypeW(ld_utf16.as_ptr()) };
-                        if ld_type == 3 {
-                            Some(ld)
-                        } else {
-                            None // not a fixed logical drive
-                        }
-                    })
-                    .collect::<Vec<String>>();
+        .zip(ld_all)
+        .filter_map(|(b, ld)| {
+            if !b {
+                return None; // not a logical drive
+            }
+            // Convert an UTF-8 string to a null-delimited UTF-16 string
+            let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
+            ld_utf16.push(0);
+            let ld_type = unsafe { GetDriveTypeW(ld_utf16.as_ptr()) };
+            if ld_type == 3 {
+                Some(ld)
+            } else {
+                None // not a fixed logical drive
+            }
+        })
+        .collect::<Vec<String>>();
 
-    // Generate a dir list from each logical drives and save it to a temp file 
+    // Generate a dir list from each logical drives and save it to a temp file
     let mut stats = Statistics::default();
     let mut dirlist = env::temp_dir();
     dirlist.push("dirlist");
@@ -139,11 +139,11 @@ fn main() {
         unwrap!(remove_file(&db));
     }
     unwrap!(rename(&db1, &db));
-    
+
     // Output the statistics
     stats.elapsed = start.elapsed().as_secs();
     let stats = json!({
-        "dirs": stats.dirs, 
+        "dirs": stats.dirs,
         "files": stats.files,
         "files_bytes": stats.files_bytes,
         "db_size": stats.db_size,
@@ -164,10 +164,10 @@ mod tests {
     #[test]
     fn dwordbits_ok() {
         let mut bits = DwordBits::new(12 as DWORD);
-        assert_eq!(bits.next(), Some(false)); 
-        assert_eq!(bits.next(), Some(false)); 
-        assert_eq!(bits.next(), Some(true));  
-        assert_eq!(bits.next(), Some(true)); 
+        assert_eq!(bits.next(), Some(false));
+        assert_eq!(bits.next(), Some(false));
+        assert_eq!(bits.next(), Some(true));
+        assert_eq!(bits.next(), Some(true));
         bits.for_each(|b| assert_eq!(b, false));
     }
 }

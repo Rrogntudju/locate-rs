@@ -1,15 +1,15 @@
 use {
-    std::time::Instant,
-    std::process::{Command, exit},
-    std::sync::Arc,
-    std::env,
     ctrlc::set_handler,
+    std::env,
+    std::process::{exit, Command},
+    std::sync::Arc,
+    std::time::Instant,
 };
 
 fn time_and_exit(elapsed: u128, exit_code: i32) {
     let s = elapsed / 1_000;
     let m = s / 60;
-    println!("\n{}m{}.{}s", m,  s, elapsed % 1_000);
+    println!("\n{}m{}.{}s", m, s, elapsed % 1_000);
     exit(exit_code);
 }
 
@@ -17,7 +17,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut elapsed = 0;
     let mut exit_code = 0;
-    
+
     if args.len() > 1 {
         let mut cmd = Command::new(&args[1]);
         for arg in args.iter().skip(2) {
