@@ -94,8 +94,7 @@ fn main() {
                         let ld_type = unsafe { GetDriveTypeW(ld_utf16.as_ptr()) };
                         if ld_type == 3 {
                             Some(ld)
-                        }
-                        else {
+                        } else {
                             None // not a fixed logical drive
                         }
                     })
@@ -106,22 +105,20 @@ fn main() {
     let mut dirlist = env::temp_dir();
     dirlist.push("dirlist");
     dirlist.set_extension("txt");
-    {
-        let mut writer = BufWriter::new(unwrap!(File::create(&dirlist)));
-        for ld in ld_fix {
-            let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
-            for entry in walker {
-                if let Ok(m) = entry.metadata() {
-                    let p = entry.path().to_string_lossy(); // path may contain non-unicode sequence
-                    if m.is_dir() {
-                        unwrap!(write!(writer, "{}\\\n", p));
-                        stats.dirs += 1;
-                    }
-                    else {
-                        unwrap!(write!(writer, "{}\n", p));
-                        stats.files += 1;
-                        stats.files_bytes += p.len();
-                    }
+
+    let mut writer = BufWriter::new(unwrap!(File::create(&dirlist)));
+    for ld in ld_fix {
+        let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
+        for entry in walker {
+            if let Ok(m) = entry.metadata() {
+                let p = entry.path().to_string_lossy(); // path may contain non-unicode sequence
+                if m.is_dir() {
+                    unwrap!(write!(writer, "{}\\\n", p));
+                    stats.dirs += 1;
+                } else {
+                    unwrap!(write!(writer, "{}\n", p));
+                    stats.files += 1;
+                    stats.files_bytes += p.len();
                 }
             }
         }

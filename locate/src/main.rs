@@ -95,8 +95,7 @@ fn main() {
     let limit =
         if is_limit {
             matches.value_of("limit").unwrap().parse::<usize>().unwrap()
-        }
-        else {
+        } else {
             0
         };
     let is_count =  matches.is_present("count");
@@ -115,14 +114,10 @@ fn main() {
         let pat = 
             if pattern.starts_with("/") {
                 pattern.splitn(2, '/').collect::<Vec<&str>>()[1].to_owned()     // pattern «as is» 
-            }
-            else {
-                if pattern.starts_with("*") || pattern.ends_with("*") {
-                    pattern.to_owned()      // pattern «as is» 
-                }
-                else {
-                    format!("*{}*", pattern)  // implicit globbing 
-                }
+            } else if pattern.starts_with("*") || pattern.ends_with("*") {
+                pattern.to_owned()      // pattern «as is» 
+            } else {
+                format!("*{}*", pattern)  // implicit globbing 
             };
 
         match Pattern::new(&pat) {
@@ -177,31 +172,23 @@ fn main() {
         let entry_test = 
             if is_base {
                 entry.rsplitn(2, '\\').collect::<Vec<&str>>()[0]    // basename
-            }
-            else if is_dir {
+            } else if is_dir {
                 entry.rsplitn(2, '\\').collect::<Vec<&str>>()[1]    // dir entry minus the \    
-            }
-            else {
+            } else {
                 &entry
             };
 
-        if is_all {
-            if !glob_pat.iter().all(|p| p.matches_with(entry_test, mo)) {
-                continue;
-            } 
-        }
-        else {
-            if !glob_pat.iter().any(|p| p.matches_with(entry_test, mo)) {
-                continue;
-            } 
+        if is_all && !glob_pat.iter().all(|p| p.matches_with(entry_test, mo)) {
+            continue;
+        } else if !glob_pat.iter().any(|p| p.matches_with(entry_test, mo)) {
+            continue;
         }
 
         if !is_count {
             let entry_out =
                 if is_dir {
                     entry_test   // dir entry minus the \
-                }
-                else {
+                } else {
                     &entry
                 };
             unwrap!(out.write_all(entry_out.as_bytes()));

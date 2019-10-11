@@ -66,8 +66,7 @@ impl Iterator for FrCompress {
                     for (ch_line, ch_prec) in line.chars().zip(self.prec.chars()) {
                         if ch_line == ch_prec {
                             ctr += 1;
-                        }
-                        else {
+                        } else {
                             break;
                         }
                     }
@@ -76,8 +75,7 @@ impl Iterator for FrCompress {
                     let offset: i16 = ctr as i16 - self.prec_ctr as i16;
                     if let Ok(offset_i8) = i8::try_from(offset) {
                         out_bytes.extend_from_slice(&offset_i8.to_be_bytes()); // 1 byte offset
-                    }
-                    else {
+                    } else {
                         out_bytes.push(0x80);
                         out_bytes.extend_from_slice(&offset.to_be_bytes()); // 2 bytes offset big-endian
                     }
@@ -87,8 +85,7 @@ impl Iterator for FrCompress {
                     let len: i16 = suffix.len() as i16;  // length in bytes
                     if let Ok(len_i8) = i8::try_from(len) {
                         out_bytes.extend_from_slice(&len_i8.to_be_bytes()); // 1 byte length
-                    }
-                    else {
+                    } else {
                         out_bytes.push(0x80);
                         out_bytes.extend_from_slice(&len.to_be_bytes()); // 2 bytes length big-endian
                     }
@@ -130,8 +127,7 @@ impl FrDecompress {
         }
         if count_1b[0] != 0x80 {
             Some(i8::from_be_bytes([count_1b[0]]) as i16)
-        }
-        else {
+        } else {
             let count_2b = bytes_mut.take(2).filter_map(|b| b.ok()).collect::<Vec<u8>>();
             if count_2b.len() != 2 {
                 return None;
@@ -152,12 +148,10 @@ impl FrDecompress {
             return None;
         }
         
-        Some(
-            match String::from_utf8(suffix) {
+        Some(match String::from_utf8(suffix) {
                 Ok(suffix) => Ok(suffix),
                 Err(err) => Err(err.into())
-            }
-        )
+        })
     }
 }
 
@@ -176,8 +170,7 @@ impl Iterator for FrDecompress {
             
             if label == "LOCATEW" {
                 self.init = true;
-            }
-            else {
+            } else {
                 return Some(Err(FrError::InvalidLabelError.into())); 
             }
         }
