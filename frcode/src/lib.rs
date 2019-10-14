@@ -124,9 +124,8 @@ impl FrDecompress {
             .filter_map(|b| b.ok())
             .collect::<Vec<u8>>();
         if count_1b.len() != 1 {
-            return None;
-        }
-        if count_1b[0] != 0x80 {
+            None
+        } else if count_1b[0] != 0x80 {
             Some(i8::from_be_bytes([count_1b[0]]) as i16)
         } else {
             let count_2b = bytes_mut
@@ -134,31 +133,31 @@ impl FrDecompress {
                 .filter_map(|b| b.ok())
                 .collect::<Vec<u8>>();
             if count_2b.len() != 2 {
-                return None;
+                None
+            } else {
+                Some(i16::from_be_bytes([count_2b[0], count_2b[1]]))
             }
-            let mut buf = [0, 0];
-            buf.copy_from_slice(&count_2b);
-            Some(i16::from_be_bytes(buf))
         }
     }
 
     fn suffix_from_bytes(&mut self, len: i16) -> Option<Result<String, Box<dyn Error>>> {
         if len <= 0 {
-            return Some(Err(FrError::InvalidLengthError.into()));
+            Some(Err(FrError::InvalidLengthError.into()))
+        } else {
+            let bytes_mut = &mut self.bytes;
+            let suffix = bytes_mut
+                .take(len as usize)
+                .filter_map(|b| b.ok())
+                .collect::<Vec<u8>>();
+            if suffix.len() != len as usize {
+                None
+            } else {
+                Some(match String::from_utf8(suffix) {
+                    Ok(suffix) => Ok(suffix),
+                    Err(err) => Err(err.into()),
+                })
+            }
         }
-        let bytes_mut = &mut self.bytes;
-        let suffix = bytes_mut
-            .take(len as usize)
-            .filter_map(|b| b.ok())
-            .collect::<Vec<u8>>();
-        if suffix.len() != len as usize {
-            return None;
-        }
-
-        Some(match String::from_utf8(suffix) {
-            Ok(suffix) => Ok(suffix),
-            Err(err) => Err(err.into()),
-        })
     }
 }
 
