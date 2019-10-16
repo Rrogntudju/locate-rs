@@ -1,7 +1,7 @@
 use {
     clap::{App, Arg},
     frcode::FrDecompress,
-    glob::{MatchOptions, Pattern},
+    globset::{GlobBuilder, GlobSetBuilder},
     num_format::{Locale, ToFormattedString},
     serde_json::Value,
     std::env,
@@ -32,7 +32,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() {
     let matches = App::new("locate")
-        .version("0.5.0")
+        .version("0.6.0")
         .arg(
             Arg::with_name("stats")
                 .help("don't search for entries, print statistics about database")
@@ -124,7 +124,7 @@ fn main() {
     let is_base = matches.is_present("base");
     let patterns = matches.values_of("pattern").unwrap();
 
-    let mut glob_pat = vec![];
+    let mut gs_builder = GlobSetBuilder::new();
     for pattern in patterns {
         let pat = if pattern.starts_with("/") {
             pattern.splitn(2, '/').collect::<Vec<&str>>()[1].to_owned() // pattern «as is»
@@ -134,23 +134,31 @@ fn main() {
             format!("*{}*", pattern) // implicit globbing
         };
 
-        match Pattern::new(&pat) {
-            Ok(p) => glob_pat.push(p),
+        let mut g_builder = GlobBuilder::new(&pat);
+        let g = match g_builder
+            .case_insensitive(true)
+            .literal_separator(false)
+            .backslash_escape(false)
+            .build()
+        {
+            Ok(g) => g,
             Err(e) => {
                 eprintln!("«{}» : {}", pat, e);
                 return;
             }
-        }
+        };
+
+        gs_builder.add(g);
     }
 
-    // Case-insensitive for ASCII characters only.
-    // Working around this issue with to_lowercase() is too costly.
-    // Use a pattern like [éÉ] as a workaround.
-    let mo = MatchOptions {
-        case_sensitive: false,
-        require_literal_separator: false,
-        require_literal_leading_dot: false,
+    let gs = match gs_builder.build() {
+        Ok(gs) => gs,
+        Err(e) => {
+            eprintln!("{}", e);
+            return;
+        }
     };
+    let glob_count = gs.len();
 
     let mut db = env::temp_dir();
     db.push("locate");
@@ -191,9 +199,9 @@ fn main() {
             &entry
         };
 
-        if is_all && !glob_pat.iter().all(|p| p.matches_with(entry_test, mo)) {
+        if is_all && gs.matches(entry_test).len() != glob_count {
             continue;
-        } else if !glob_pat.iter().any(|p| p.matches_with(entry_test, mo)) {
+        } else if !gs.is_match(entry_test) {
             continue;
         }
 

@@ -1,6 +1,6 @@
 [package]
 name = "locate"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Rrogntudju"]
 edition = "2018"
 
@@ -9,4 +9,4 @@ frcode = {path = "../frcode"}
 serde_json = "1.0"
 clap = {version = "2", default-features = false}
 num-format = "0.4"
-glob = "0.3"
+globset = "0.4"
