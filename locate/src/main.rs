@@ -135,29 +135,16 @@ fn main() {
         };
 
         let mut g_builder = GlobBuilder::new(&pat);
-        let g = match g_builder
+        let g = unwrap!(g_builder
             .case_insensitive(true)
             .literal_separator(false)
             .backslash_escape(false)
-            .build()
-        {
-            Ok(g) => g,
-            Err(e) => {
-                eprintln!("«{}» : {}", pat, e);
-                return;
-            }
-        };
+            .build());
 
         gs_builder.add(g);
     }
 
-    let gs = match gs_builder.build() {
-        Ok(gs) => gs,
-        Err(e) => {
-            eprintln!("{}", e);
-            return;
-        }
-    };
+    let gs = unwrap!(gs_builder.build());
     let glob_count = gs.len();
 
     let mut db = env::temp_dir();
