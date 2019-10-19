@@ -108,11 +108,12 @@ fn main() {
     }
 
     let is_limit = matches.is_present("limit");
-    let limit = if is_limit {
-        matches.value_of("limit").unwrap().parse::<usize>().unwrap()
-    } else {
-        0
-    };
+    let limit = matches
+        .value_of("limit")
+        .unwrap_or("0")
+        .parse::<usize>()
+        .unwrap_or(0);
+
     let is_count = matches.is_present("count");
     if is_limit && limit == 0 {
         if is_count {
