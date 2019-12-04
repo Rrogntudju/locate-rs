@@ -16,9 +16,6 @@ fn time_and_exit(elapsed: u128, exit_code: i32) {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let mut elapsed = 0;
-    let mut exit_code = 0;
-
     if args.len() > 1 {
         let mut cmd = Command::new(&args[1]);
         for arg in args.iter().skip(2) {
@@ -28,13 +25,14 @@ fn main() {
         let start = Arc::new(Instant::now());
         let s = start.clone();
         set_handler(move || {
-            time_and_exit(s.elapsed().as_millis(), 0);
+            time_and_exit(s.elapsed().as_millis(), -1073741510);
         })
         .expect("Error setting Ctrl-C handler");
 
         let status = cmd.status();
-        elapsed = start.elapsed().as_millis();
+        let elapsed = start.elapsed().as_millis();
 
+        let mut exit_code = -1;
         match status {
             Ok(s) => {
                 if let Some(code) = s.code() {
@@ -48,7 +46,8 @@ fn main() {
                 }
             }
         }
+        time_and_exit(elapsed, exit_code);
+    } else {
+        time_and_exit(0, 0);
     }
-
-    time_and_exit(elapsed, exit_code);
 }
