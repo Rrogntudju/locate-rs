@@ -4,24 +4,26 @@ use {
     globset::{GlobBuilder, GlobSetBuilder},
     num_format::{Locale, ToFormattedString},
     serde_json::Value,
-    std::env,
+    std::error::Error,
     std::fs::File,
     std::io::{stdout, BufReader, BufWriter, Write},
     std::sync::mpsc,
     std::thread,
+    std::{env, fmt},
 };
 
-macro_rules! unwrap {
-    ($expression:expr) => {
-        match $expression {
-            Ok(r) => r,
-            Err(e) => {
-                eprintln!("{}", e);
-                return;
-            }
-        }
-    };
+const PAS_DE_BD: &str = "La base de données est inexistante. Exécuter updatedb.exe";
+
+#[derive(Debug)]
+struct LocateError(String);
+
+impl fmt::Display for LocateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
+
+impl Error for LocateError {}
 
 fn is_usize(v: String) -> Result<(), String> {
     match v.parse::<usize>() {
@@ -30,9 +32,9 @@ fn is_usize(v: String) -> Result<(), String> {
     }
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("locate")
-        .version("0.6.0")
+        .version("0.6.1")
         .arg(
             Arg::with_name("stats")
                 .help("don't search for entries, print statistics about database")
@@ -78,16 +80,15 @@ fn main() {
         stat.push("locate");
         stat.set_extension("txt");
         if !stat.is_file() {
-            eprintln!("La base de données n'existe pas. Exécuter updatedb.exe");
-            return;
+            return Err(LocateError(PAS_DE_BD.into()).into());
         }
-        let reader = BufReader::new(unwrap!(File::open(stat)));
-        let stats: Value = unwrap!(serde_json::from_reader(reader));
-        let dirs = stats["dirs"].as_u64().unwrap();
-        let files = stats["files"].as_u64().unwrap();
-        let files_bytes = stats["files_bytes"].as_u64().unwrap();
-        let db_size = stats["db_size"].as_u64().unwrap();
-        let elapsed = stats["elapsed"].as_u64().unwrap();
+        let reader = BufReader::new(File::open(stat)?);
+        let stats: Value = serde_json::from_reader(reader)?;
+        let dirs = stats["dirs"].as_u64().unwrap_or(0);
+        let files = stats["files"].as_u64().unwrap_or(0);
+        let files_bytes = stats["files_bytes"].as_u64().unwrap_or(0);
+        let db_size = stats["db_size"].as_u64().unwrap_or(0);
+        let elapsed = stats["elapsed"].as_u64().unwrap_or(0);
         println!("Base de données locate.db :");
         println!("      {} répertoires", dirs.to_formatted_string(loc));
         println!("      {} fichiers", files.to_formatted_string(loc));
@@ -104,7 +105,7 @@ fn main() {
             elapsed / 60,
             elapsed % 60
         );
-        return;
+        return Ok(());
     }
 
     let is_limit = matches.is_present("limit");
@@ -119,7 +120,7 @@ fn main() {
         if is_count {
             println!("0");
         }
-        return; // nothing to do
+        return Ok(()); // nothing to do
     }
     let is_all = matches.is_present("all");
     let is_base = matches.is_present("base");
@@ -136,24 +137,23 @@ fn main() {
         };
 
         let mut g_builder = GlobBuilder::new(&pat);
-        let g = unwrap!(g_builder
+        let g = g_builder
             .case_insensitive(true)
             .literal_separator(false)
             .backslash_escape(false)
-            .build());
+            .build()?;
 
         gs_builder.add(g);
     }
 
-    let gs = unwrap!(gs_builder.build());
+    let gs = gs_builder.build()?;
     let glob_count = gs.len();
 
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
     if !db.is_file() {
-        eprintln!("La base de données n'existe pas. Exécuter updatedb.exe");
-        return;
+        return Err(LocateError(PAS_DE_BD.into()).into());
     }
     let stdout = stdout();
     let mut out = BufWriter::new(stdout.lock());
@@ -162,9 +162,9 @@ fn main() {
     // run the FrDecompress iterator on his own thread
     let (tx, rx) = mpsc::sync_channel(10_000);
     thread::spawn(move || {
-        let decompressed_entries = FrDecompress::new(BufReader::new(unwrap!(File::open(db))));
+        let decompressed_entries = FrDecompress::new(BufReader::new(File::open(db).unwrap()));
         for entry in decompressed_entries {
-            if let Err(e) = tx.send(unwrap!(entry)) {
+            if let Err(e) = tx.send(entry.unwrap()) {
                 if !is_limit {
                     eprintln!("{}", e);
                 }
@@ -199,8 +199,8 @@ fn main() {
             } else {
                 &entry
             };
-            unwrap!(out.write_all(entry_out.as_bytes()));
-            unwrap!(out.write_all(b"\n"));
+            out.write_all(entry_out.as_bytes())?;
+            out.write_all(b"\n")?;
         }
 
         ctr += 1;
@@ -210,6 +210,7 @@ fn main() {
     }
 
     if is_count {
-        unwrap!(write!(out, "{}\n", ctr.to_formatted_string(loc)));
+        write!(out, "{}\n", ctr.to_formatted_string(loc))?;
     }
+    Ok(())
 }

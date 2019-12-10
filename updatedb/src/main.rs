@@ -1,26 +1,26 @@
 use {
     frcode::compress_file,
     serde_json::json,
-    std::env,
+    std::error::Error,
     std::fs::{remove_file, rename, File},
     std::io::{BufWriter, Write},
     std::time::Instant,
+    std::{env, fmt},
     walkdir::WalkDir,
     winapi::shared::minwindef::DWORD,
     winapi::um::fileapi::{GetDriveTypeW, GetLogicalDrives},
 };
 
-macro_rules! unwrap {
-    ($expression:expr) => {
-        match $expression {
-            Ok(r) => r,
-            Err(e) => {
-                eprintln!("{}", e);
-                return;
-            }
-        }
-    };
+#[derive(Debug)]
+struct UpdatedbError(String);
+
+impl fmt::Display for UpdatedbError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
+
+impl Error for UpdatedbError {}
 
 #[derive(Default)]
 struct Statistics {
@@ -60,17 +60,16 @@ impl Iterator for DwordBits {
     }
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let start = Instant::now();
 
     // Get the list of the fixed logical drives
     let ld_bits: DWORD = unsafe { GetLogicalDrives() };
     if ld_bits == 0 {
-        match std::io::Error::last_os_error().raw_os_error() {
-            Some(e) => eprintln!("GetLogicalDrives: {}", e),
-            None => eprintln!("GetLogicalDrives: DOH!"),
-        }
-        return;
+        return Err(match std::io::Error::last_os_error().raw_os_error() {
+            Some(e) => UpdatedbError(format!("GetLogicalDrives: {}", e)).into(),
+            None => UpdatedbError("GetLogicalDrives: DOH!".into()).into(),
+        });
     }
 
     let ld_all = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -106,17 +105,17 @@ fn main() {
     dirlist.push("dirlist");
     dirlist.set_extension("txt");
 
-    let mut writer = BufWriter::new(unwrap!(File::create(&dirlist)));
+    let mut writer = BufWriter::new(File::create(&dirlist)?);
     for ld in ld_fix {
         let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
         for entry in walker {
             if let Ok(m) = entry.metadata() {
                 let p = entry.path().to_string_lossy(); // path may contain non-unicode sequence
                 if m.is_dir() {
-                    unwrap!(write!(writer, "{}\\\n", p));
+                    write!(writer, "{}\\\n", p)?;
                     stats.dirs += 1;
                 } else {
-                    unwrap!(write!(writer, "{}\n", p));
+                    write!(writer, "{}\n", p)?;
                     stats.files += 1;
                     stats.files_bytes += p.len();
                 }
@@ -128,17 +127,17 @@ fn main() {
     let mut db1 = env::temp_dir();
     db1.push("locate");
     db1.set_extension("db1");
-    stats.db_size = unwrap!(compress_file(&dirlist, &db1));
+    stats.db_size = compress_file(&dirlist, &db1)?;
 
     // Cleanup
-    unwrap!(remove_file(&dirlist));
+    remove_file(&dirlist)?;
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
     if db.is_file() {
-        unwrap!(remove_file(&db));
+        remove_file(&db)?;
     }
-    unwrap!(rename(&db1, &db));
+    rename(&db1, &db)?;
 
     // Output the statistics
     stats.elapsed = start.elapsed().as_secs();
@@ -149,12 +148,13 @@ fn main() {
         "db_size": stats.db_size,
         "elapsed": stats.elapsed,
     });
-    let j = unwrap!(serde_json::to_string(&stats));
+    let j = serde_json::to_string(&stats)?;
     let mut path = env::temp_dir();
     path.push("locate");
     path.set_extension("txt");
-    let mut writer = BufWriter::new(unwrap!(File::create(path)));
-    unwrap!(writer.write_all(j.as_bytes()));
+    let mut writer = BufWriter::new(File::create(path)?);
+    writer.write_all(j.as_bytes())?;
+    Ok(())
 }
 
 #[cfg(test)]
