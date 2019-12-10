@@ -34,7 +34,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("locate")
-        .version("0.6.1")
+        .version("0.6.2")
         .arg(
             Arg::with_name("stats")
                 .help("don't search for entries, print statistics about database")
