@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .arg(
             Arg::with_name("stats")
                 .help("don't search for entries, print statistics about database")
-                .short("s")
+                .short("S")
                 .long("statistics"),
         )
         .arg(
@@ -58,6 +58,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .help("only print number of found entries")
                 .short("c")
                 .long("count"),
+        )
+        .arg(
+            Arg::with_name("case")
+                .help("case distinctions when matching patterns")
+                .short("C")
+                .long("case-sensitive"),
         )
         .arg(
             Arg::with_name("limit")
@@ -124,6 +130,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     let is_all = matches.is_present("all");
     let is_base = matches.is_present("base");
+    let is_case = matches.is_present("case");
     let patterns = matches.values_of("pattern").unwrap();
 
     let mut gs_builder = GlobSetBuilder::new();
@@ -138,7 +145,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let mut g_builder = GlobBuilder::new(&pat);
         let g = g_builder
-            .case_insensitive(true)
+            .case_insensitive(!is_case)
             .literal_separator(false)
             .backslash_escape(false)
             .build()?;
