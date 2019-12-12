@@ -4,7 +4,7 @@ use std::{
     fmt,
     fs::File,
     io,
-    io::{prelude::*, BufReader, BufWriter},
+    io::{prelude::{BufRead, Write}, BufReader, BufWriter},
     path::Path,
 };
 
