@@ -6,6 +6,8 @@ use {
     std::time::Instant,
 };
 
+const STATUS_CONTROL_C_EXIT: i32 = -1073741510; // 0xC000013A_u32
+
 fn time_and_exit(elapsed: u128, exit_code: i32) {
     let m = elapsed / 60_000;
     let rms = elapsed % 60_000;
@@ -25,7 +27,7 @@ fn main() {
         let start = Arc::new(Instant::now());
         let s = start.clone();
         set_handler(move || {
-            time_and_exit(s.elapsed().as_millis(), -1073741510);
+            time_and_exit(s.elapsed().as_millis(), STATUS_CONTROL_C_EXIT);
         })
         .expect("Error setting Ctrl-C handler");
 
