@@ -112,7 +112,7 @@ impl FrDecompress {
         FrDecompress {
             init: false,
             prec_ctr: 0,
-            prec: String::new(),
+            prec: String::with_capacity(500),
             bytes: Box::new(reader.bytes()),
         }
     }
@@ -196,7 +196,8 @@ impl Iterator for FrDecompress {
         let line = prefix + &suffix;
 
         self.prec_ctr = len_prefix as u16;
-        self.prec = line.clone();
+        self.prec.clear();
+        self.prec.push_str(&line);
 
         Some(Ok(line))
     }
