@@ -4,11 +4,12 @@ use std::{
     fmt,
     fs::File,
     io,
-    io::{prelude::{BufRead, Write}, BufReader, BufWriter},
+    io::{
+        prelude::{BufRead, Write},
+        BufReader, BufWriter,
+    },
     path::Path,
 };
-
-const LINE_CAP: usize = 1000;   // string capacity in bytes
 
 #[derive(Debug)]
 pub enum FrError {
@@ -114,7 +115,7 @@ impl FrDecompress {
         FrDecompress {
             init: false,
             prec_ctr: 0,
-            prec: String::with_capacity(LINE_CAP),
+            prec: String::with_capacity(1000),
             bytes: Box::new(reader.bytes()),
         }
     }
@@ -189,14 +190,18 @@ impl Iterator for FrDecompress {
             Err(err) => return Some(Err(err.into())),
         };
 
-        let len_prefix = self.prec_ctr as i16 + offset; // length in chars
-        let mut line = String::with_capacity(LINE_CAP);
-        for c in self.prec.chars().take(len_prefix as usize) {
-            line.push(c);
-        }
+        let prefix_char_len = self.prec_ctr as i16 + offset;
+        let prefix_byte_len: usize = self
+            .prec
+            .chars()
+            .take(prefix_char_len as usize)
+            .map(|c| c.len_utf8())
+            .sum();
+        let mut line = String::with_capacity(prefix_byte_len + suffix.len());
+        line.push_str(&self.prec[..prefix_byte_len]);
         line.push_str(&suffix);
-        
-        self.prec_ctr = len_prefix as u16;
+
+        self.prec_ctr = prefix_char_len as u16;
         self.prec.clear();
         self.prec.push_str(&line);
 
