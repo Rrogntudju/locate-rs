@@ -8,7 +8,7 @@ use std::{
     path::Path,
 };
 
-const LINE_CAP: usize = 500;
+const LINE_CAP: usize = 1000;   // string capacity in bytes
 
 #[derive(Debug)]
 pub enum FrError {
