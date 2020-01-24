@@ -82,16 +82,15 @@ impl Iterator for FrCompress {
                 }
 
                 // Output the line without the prefix
-                let suffix = line.chars().skip(ctr as usize).collect::<String>();
-                let len: i16 = suffix.len() as i16; // length in bytes
-                if let Ok(len_i8) = i8::try_from(len) {
+                let suffix_byte_len: usize =
+                    line.chars().skip(ctr as usize).map(|c| c.len_utf8()).sum();
+                if let Ok(len_i8) = i8::try_from(suffix_byte_len) {
                     out_bytes.extend_from_slice(&len_i8.to_be_bytes()); // 1 byte length
                 } else {
                     out_bytes.push(0x80);
-                    out_bytes.extend_from_slice(&len.to_be_bytes()); // 2 bytes length big-endian
+                    out_bytes.extend_from_slice(&(suffix_byte_len as i16).to_be_bytes()); // 2 bytes length big-endian
                 }
-                out_bytes.extend_from_slice(suffix.as_bytes());
-
+                out_bytes.extend_from_slice(&line[line.len() - suffix_byte_len as usize..].as_bytes());
                 self.prec_ctr = ctr;
                 self.prec = line;
 
@@ -115,7 +114,7 @@ impl FrDecompress {
         FrDecompress {
             init: false,
             prec_ctr: 0,
-            prec: String::with_capacity(1000),
+            prec: String::with_capacity(1_000),
             bytes: Box::new(reader.bytes()),
         }
     }
@@ -184,20 +183,16 @@ impl Iterator for FrDecompress {
         }
 
         let offset = self.count_from_bytes()?; // end of valid updateDB file happens here
-        let len = self.count_from_bytes()?;
-        let suffix = match self.suffix_from_bytes(len)? {
+        let suffix_byte_len = self.count_from_bytes()?;
+        let suffix = match self.suffix_from_bytes(suffix_byte_len)? {
             Ok(suffix) => suffix,
             Err(err) => return Some(Err(err.into())),
         };
 
         let prefix_char_len = self.prec_ctr as i16 + offset;
-        let prefix_byte_len: usize = self
-            .prec
-            .chars()
-            .take(prefix_char_len as usize)
-            .map(|c| c.len_utf8())
-            .sum();
-        let mut line = String::with_capacity(prefix_byte_len + suffix.len());
+        let prefix_byte_len: usize = 
+            self.prec.chars().take(prefix_char_len as usize).map(|c| c.len_utf8()).sum();
+        let mut line = String::with_capacity(prefix_byte_len + suffix_byte_len as usize);
         line.push_str(&self.prec[..prefix_byte_len]);
         line.push_str(&suffix);
 
