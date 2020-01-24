@@ -8,6 +8,8 @@ use std::{
     path::Path,
 };
 
+const LINE_CAP: usize = 500;
+
 #[derive(Debug)]
 pub enum FrError {
     InvalidLengthError,
@@ -112,7 +114,7 @@ impl FrDecompress {
         FrDecompress {
             init: false,
             prec_ctr: 0,
-            prec: String::with_capacity(500),
+            prec: String::with_capacity(LINE_CAP),
             bytes: Box::new(reader.bytes()),
         }
     }
@@ -188,13 +190,12 @@ impl Iterator for FrDecompress {
         };
 
         let len_prefix = self.prec_ctr as i16 + offset; // length in chars
-        let prefix = self
-            .prec
-            .chars()
-            .take(len_prefix as usize)
-            .collect::<String>();
-        let line = prefix + &suffix;
-
+        let mut line = String::with_capacity(LINE_CAP);
+        for c in self.prec.chars().take(len_prefix as usize) {
+            line.push(c);
+        }
+        line.push_str(&suffix);
+        
         self.prec_ctr = len_prefix as u16;
         self.prec.clear();
         self.prec.push_str(&line);
