@@ -30,7 +30,7 @@ impl fmt::Display for FrError {
 
 pub struct FrCompress {
     init: bool,
-    prec_ctr: u16,
+    prec_prefix_len: i16,
     prec: String,
     lines: Box<dyn Iterator<Item = io::Result<String>>>,
 }
@@ -39,7 +39,7 @@ impl FrCompress {
     pub fn new(reader: impl BufRead + 'static) -> FrCompress {
         FrCompress {
             init: false,
-            prec_ctr: 0,
+            prec_prefix_len: 0,
             prec: String::new(),
             lines: Box::new(reader.lines()),
         }
@@ -63,17 +63,17 @@ impl Iterator for FrCompress {
                 }
 
                 // Find the common prefix (case sensitive) between the current and the previous line
-                let mut ctr: u16 = 0;
+                let mut prefix_len: usize = 0;
                 for (ch_line, ch_prec) in line.chars().zip(self.prec.chars()) {
                     if ch_line == ch_prec {
-                        ctr += 1;
+                        prefix_len += ch_line.len_utf8();
                     } else {
                         break;
                     }
                 }
 
                 // Output the offset-differential count
-                let offset: i16 = ctr as i16 - self.prec_ctr as i16;
+                let offset: i16 = prefix_len as i16 - self.prec_prefix_len;
                 if let Ok(offset_i8) = i8::try_from(offset) {
                     out_bytes.extend_from_slice(&offset_i8.to_be_bytes()); // 1 byte offset
                 } else {
@@ -82,16 +82,15 @@ impl Iterator for FrCompress {
                 }
 
                 // Output the line without the prefix
-                let suffix_byte_len: usize =
-                    line.chars().skip(ctr as usize).map(|c| c.len_utf8()).sum();
-                if let Ok(len_i8) = i8::try_from(suffix_byte_len) {
+                let suffix_len: usize = line.len() - prefix_len;
+                if let Ok(len_i8) = i8::try_from(suffix_len) {
                     out_bytes.extend_from_slice(&len_i8.to_be_bytes()); // 1 byte length
                 } else {
                     out_bytes.push(0x80);
-                    out_bytes.extend_from_slice(&(suffix_byte_len as i16).to_be_bytes()); // 2 bytes length big-endian
+                    out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes()); // 2 bytes length big-endian
                 }
-                out_bytes.extend_from_slice(&line[line.len() - suffix_byte_len as usize..].as_bytes());
-                self.prec_ctr = ctr;
+                out_bytes.extend_from_slice(&line[prefix_len..].as_bytes());
+                self.prec_prefix_len = prefix_len as i16;
                 self.prec = line;
 
                 Some(Ok(out_bytes))
@@ -104,7 +103,7 @@ impl Iterator for FrCompress {
 
 pub struct FrDecompress {
     init: bool,
-    prec_ctr: u16,
+    prec_prefix_len: i16,
     prec: String,
     bytes: Box<dyn Iterator<Item = io::Result<u8>>>,
 }
@@ -113,7 +112,7 @@ impl FrDecompress {
     pub fn new(reader: impl BufRead + 'static) -> FrDecompress {
         FrDecompress {
             init: false,
-            prec_ctr: 0,
+            prec_prefix_len: 0,
             prec: String::with_capacity(1_000),
             bytes: Box::new(reader.bytes()),
         }
@@ -142,16 +141,16 @@ impl FrDecompress {
         }
     }
 
-    fn suffix_from_bytes(&mut self, len: i16) -> Option<Result<String, Box<dyn Error>>> {
-        if len <= 0 {
+    fn suffix_from_bytes(&mut self, len: usize) -> Option<Result<String, Box<dyn Error>>> {
+        if len == 0 {
             Some(Err(FrError::InvalidLengthError.into()))
         } else {
             let bytes_mut = &mut self.bytes;
             let suffix = bytes_mut
-                .take(len as usize)
+                .take(len)
                 .filter_map(|b| b.ok())
                 .collect::<Vec<u8>>();
-            if suffix.len() != len as usize {
+            if suffix.len() != len {
                 None
             } else {
                 Some(match String::from_utf8(suffix) {
@@ -170,7 +169,7 @@ impl Iterator for FrDecompress {
         if !self.init {
             let _ = self.bytes.next()?; // Skip the offset
             let len = self.count_from_bytes()?;
-            let label = match self.suffix_from_bytes(len)? {
+            let label = match self.suffix_from_bytes(len as usize)? {
                 Ok(label) => label,
                 Err(err) => return Some(Err(err.into())),
             };
@@ -183,20 +182,18 @@ impl Iterator for FrDecompress {
         }
 
         let offset = self.count_from_bytes()?; // end of valid updateDB file happens here
-        let suffix_byte_len = self.count_from_bytes()?;
-        let suffix = match self.suffix_from_bytes(suffix_byte_len)? {
+        let suffix_len = self.count_from_bytes()?;
+        let suffix = match self.suffix_from_bytes(suffix_len as usize)? {
             Ok(suffix) => suffix,
             Err(err) => return Some(Err(err.into())),
         };
 
-        let prefix_char_len = self.prec_ctr as i16 + offset;
-        let prefix_byte_len: usize = 
-            self.prec.chars().take(prefix_char_len as usize).map(|c| c.len_utf8()).sum();
-        let mut line = String::with_capacity(prefix_byte_len + suffix_byte_len as usize);
-        line.push_str(&self.prec[..prefix_byte_len]);
+        let prefix_len = self.prec_prefix_len + offset;
+        let mut line = String::with_capacity((prefix_len + suffix_len) as usize);
+        line.push_str(&self.prec[..prefix_len as usize]);
         line.push_str(&suffix);
 
-        self.prec_ctr = prefix_char_len as u16;
+        self.prec_prefix_len = prefix_len;
         self.prec.clear();
         self.prec.push_str(&line);
 
