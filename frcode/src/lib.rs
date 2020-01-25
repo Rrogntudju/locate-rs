@@ -13,7 +13,6 @@ use std::{
 
 #[derive(Debug)]
 pub enum FrError {
-    InvalidLengthError,
     InvalidLabelError,
 }
 
@@ -22,7 +21,6 @@ impl Error for FrError {}
 impl fmt::Display for FrError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            FrError::InvalidLengthError => write!(f, "La longueur du suffixe est invalide"),
             FrError::InvalidLabelError => write!(f, "Fichier updateDB invalide"),
         }
     }
@@ -142,22 +140,18 @@ impl FrDecompress {
     }
 
     fn suffix_from_bytes(&mut self, len: usize) -> Option<Result<String, Box<dyn Error>>> {
-        if len == 0 {
-            Some(Err(FrError::InvalidLengthError.into()))
+        let bytes_mut = &mut self.bytes;
+        let suffix = bytes_mut
+            .take(len)
+            .filter_map(|b| b.ok())
+            .collect::<Vec<u8>>();
+        if suffix.len() != len {
+            None
         } else {
-            let bytes_mut = &mut self.bytes;
-            let suffix = bytes_mut
-                .take(len)
-                .filter_map(|b| b.ok())
-                .collect::<Vec<u8>>();
-            if suffix.len() != len {
-                None
-            } else {
-                Some(match String::from_utf8(suffix) {
-                    Ok(suffix) => Ok(suffix),
-                    Err(err) => Err(err.into()),
-                })
-            }
+            Some(match String::from_utf8(suffix) {
+                Ok(suffix) => Ok(suffix),
+                Err(err) => Err(err.into()),
+            })
         }
     }
 }
