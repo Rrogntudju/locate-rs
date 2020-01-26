@@ -165,11 +165,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let stdout = stdout();
     let mut out = BufWriter::new(stdout.lock());
     let mut ctr: usize = 0;
+    let db_file = File::open(db)?;
 
     // run the FrDecompress iterator on his own thread
     let (tx, rx) = mpsc::channel();
     thread::spawn(move || {
-        let decompressed_entries = FrDecompress::new(BufReader::new(File::open(db).unwrap()));
+        let decompressed_entries = FrDecompress::new(BufReader::new(db_file));
         for entry in decompressed_entries {
             if let Err(e) = tx.send(entry.unwrap()) {
                 if !is_limit {
