@@ -162,9 +162,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     if !db.is_file() {
         return Err(LocateError(PAS_DE_BD.into()).into());
     }
-    let stdout = stdout();
-    let mut out = BufWriter::new(stdout.lock());
-    let mut ctr: usize = 0;
     let db_file = File::open(db)?;
 
     // run the FrDecompress iterator on his own thread
@@ -180,6 +177,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     });
+
+    let stdout = stdout();
+    let mut out = BufWriter::new(stdout.lock());
+    let mut ctr: usize = 0;
 
     for entry in rx {
         let is_dir = entry.ends_with('\\'); // dir entries are terminated with a \
