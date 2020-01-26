@@ -12,7 +12,7 @@ fn time_and_exit(elapsed: u128, exit_code: i32) {
     let m = elapsed / 60_000;
     let rms = elapsed % 60_000;
     let s = rms / 1_000;
-    println!("\n{}m{}.{}s", m, s, rms % 1_000);
+    println!("\n{}m{},{:03}s", m, s, rms % 1_000);
     exit(exit_code);
 }
 

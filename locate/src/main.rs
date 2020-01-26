@@ -167,7 +167,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut ctr: usize = 0;
 
     // run the FrDecompress iterator on his own thread
-    let (tx, rx) = mpsc::sync_channel(10_000);
+    let (tx, rx) = mpsc::channel();
     thread::spawn(move || {
         let decompressed_entries = FrDecompress::new(BufReader::new(File::open(db).unwrap()));
         for entry in decompressed_entries {
