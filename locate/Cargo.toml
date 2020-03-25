@@ -9,4 +9,4 @@ frcode = {path = "../frcode"}
 serde_json = "1.0"
 clap = {version = "2", default-features = false}
 num-format = "0.4"
-globset = { git = "https://github.com/BurntSushi/globset.git" }
+globset = "0.4"
