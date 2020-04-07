@@ -72,8 +72,8 @@ impl Iterator for FrCompress {
 
                 // Output the offset-differential count
                 let offset: i16 = prefix_len as i16 - self.prec_prefix_len;
-                if let Ok(offset_i8) = i8::try_from(offset) {
-                    out_bytes.extend_from_slice(&offset_i8.to_be_bytes()); // 1 byte offset
+                if offset > -128 && offset < 128 {
+                    out_bytes.extend_from_slice(&i8::try_from(offset).unwrap().to_be_bytes()); // 1 byte offset
                 } else {
                     out_bytes.push(0x80);
                     out_bytes.extend_from_slice(&offset.to_be_bytes()); // 2 bytes offset big-endian
