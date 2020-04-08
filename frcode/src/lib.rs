@@ -60,6 +60,12 @@ impl Iterator for FrCompress {
                     self.init = true;
                 }
 
+                let line_len = line.len();
+                if !i16::try_from(line_len).is_ok() {
+                    eprintln!("Length of path > 32767:\n{}", line);
+                    return None;
+                }
+
                 // Find the common prefix (case sensitive) between the current and the previous line
                 let mut prefix_len: usize = 0;
                 for (ch_line, ch_prec) in line.chars().zip(self.prec.chars()) {
@@ -80,7 +86,7 @@ impl Iterator for FrCompress {
                 }
 
                 // Output the line without the prefix
-                let suffix_len: usize = line.len() - prefix_len;
+                let suffix_len: usize = line_len - prefix_len;
                 if let Ok(len_i8) = i8::try_from(suffix_len) {
                     out_bytes.extend_from_slice(&len_i8.to_be_bytes()); // 1 byte length
                 } else {
