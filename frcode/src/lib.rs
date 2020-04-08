@@ -61,7 +61,7 @@ impl Iterator for FrCompress {
                 }
 
                 let line_len = line.len();
-                if !i16::try_from(line_len).is_ok() {
+                if i16::try_from(line_len).is_err() {
                     eprintln!("Length of path > 32767:\n{}", line);
                     return None;
                 }
