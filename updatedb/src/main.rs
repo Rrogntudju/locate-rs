@@ -39,7 +39,7 @@ struct DwordBits {
 impl DwordBits {
     fn new(dword: DWORD) -> DwordBits {
         DwordBits {
-            dword: dword,
+            dword,
             ctr: 0,
         }
     }

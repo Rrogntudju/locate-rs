@@ -79,7 +79,7 @@ impl Iterator for FrCompress {
                 // Output the offset-differential count
                 let offset: i16 = prefix_len as i16 - self.prec_prefix_len;
                 if offset > -128 && offset < 128 {
-                    out_bytes.extend_from_slice(&i8::try_from(offset).unwrap().to_be_bytes()); // 1 byte offset
+                    out_bytes.extend_from_slice(&(offset as i8).to_be_bytes()); // 1 byte offset
                 } else {
                     out_bytes.push(0x80);
                     out_bytes.extend_from_slice(&offset.to_be_bytes()); // 2 bytes offset big-endian
@@ -87,8 +87,8 @@ impl Iterator for FrCompress {
 
                 // Output the line without the prefix
                 let suffix_len: usize = line_len - prefix_len;
-                if let Ok(len_i8) = i8::try_from(suffix_len) {
-                    out_bytes.extend_from_slice(&len_i8.to_be_bytes()); // 1 byte length
+                if suffix_len < 128 {
+                    out_bytes.extend_from_slice(&(suffix_len as i8).to_be_bytes()); // 1 byte length
                 } else {
                     out_bytes.push(0x80);
                     out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes()); // 2 bytes length big-endian
