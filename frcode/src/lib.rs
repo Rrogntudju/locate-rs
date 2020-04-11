@@ -1,5 +1,4 @@
 use std::{
-    convert::TryFrom,
     error::Error,
     fmt,
     fs::File,
@@ -60,12 +59,6 @@ impl Iterator for FrCompress {
                     self.init = true;
                 }
 
-                let line_len = line.len();
-                if i16::try_from(line_len).is_err() {
-                    eprintln!("Length of path > 32767 bytes:\n{}", line);
-                    return None;
-                }
-
                 // Find the common prefix (case sensitive) between the current and the previous line
                 let mut prefix_len: usize = 0;
                 for (ch_line, ch_prec) in line.chars().zip(self.prec.chars()) {
@@ -86,11 +79,12 @@ impl Iterator for FrCompress {
                 }
 
                 // Output the line without the prefix
-                let suffix_len: usize = line_len - prefix_len;
+                let suffix_len: usize = line.len() - prefix_len;
                 if suffix_len < 128 {
                     out_bytes.extend_from_slice(&(suffix_len as i8).to_be_bytes()); // 1 byte length
                 } else {
                     out_bytes.push(0x80);
+                    assert!(suffix_len < 32768, true);
                     out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes()); // 2 bytes length big-endian
                 }
                 out_bytes.extend_from_slice(&line[prefix_len..].as_bytes());
@@ -137,27 +131,23 @@ impl FrDecompress {
                 .take(2)
                 .filter_map(|b| b.ok())
                 .collect::<Vec<u8>>();
-            if count_2b.len() != 2 {
-                None
-            } else {
-                Some(i16::from_be_bytes([count_2b[0], count_2b[1]]))
-            }
+            assert_eq!(count_2b.len(), 2); 
+            
+            Some(i16::from_be_bytes([count_2b[0], count_2b[1]]))
         }
     }
 
-    fn suffix_from_bytes(&mut self, len: usize) -> Option<Result<String, Box<dyn Error>>> {
+    fn suffix_from_bytes(&mut self, len: usize) -> Result<String, Box<dyn Error>> {
         let bytes_mut = &mut self.bytes;
         let suffix = bytes_mut
             .take(len)
             .filter_map(|b| b.ok())
             .collect::<Vec<u8>>();
-        if suffix.len() != len {
-            None
-        } else {
-            Some(match String::from_utf8(suffix) {
-                Ok(suffix) => Ok(suffix),
-                Err(err) => Err(err.into()),
-            })
+        assert_eq!(suffix.len(), len);
+        
+        match String::from_utf8(suffix) {
+            Ok(suffix) => Ok(suffix),
+            Err(err) => Err(err.into()),
         }
     }
 }
@@ -169,7 +159,7 @@ impl Iterator for FrDecompress {
         if !self.init {
             let _ = self.bytes.next()?; // Skip the offset
             let len = self.count_from_bytes()?;
-            let label = match self.suffix_from_bytes(len as usize)? {
+            let label = match self.suffix_from_bytes(len as usize) {
                 Ok(label) => label,
                 Err(err) => return Some(Err(err.into())),
             };
@@ -183,7 +173,7 @@ impl Iterator for FrDecompress {
 
         let offset = self.count_from_bytes()?; // end of valid updateDB file happens here
         let suffix_len = self.count_from_bytes()?;
-        let suffix = match self.suffix_from_bytes(suffix_len as usize)? {
+        let suffix = match self.suffix_from_bytes(suffix_len as usize) {
             Ok(suffix) => suffix,
             Err(err) => return Some(Err(err.into())),
         };
