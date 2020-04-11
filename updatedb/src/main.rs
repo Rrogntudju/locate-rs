@@ -122,6 +122,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     }
+    writer.flush()?;
 
     // Compress the dir list
     let mut db1 = env::temp_dir();
