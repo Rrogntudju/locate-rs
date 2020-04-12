@@ -9,21 +9,10 @@ use {
     std::io::{stdout, BufReader, BufWriter, Write},
     std::sync::mpsc,
     std::thread,
-    std::{env, fmt},
+    std::env,
 };
 
 const PAS_DE_BD: &str = "La base de données est inexistante. Exécuter updatedb.exe";
-
-#[derive(Debug)]
-struct LocateError(String);
-
-impl fmt::Display for LocateError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for LocateError {}
 
 fn is_usize(v: String) -> Result<(), String> {
     match v.parse::<usize>() {
@@ -86,7 +75,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         stat.push("locate");
         stat.set_extension("txt");
         if !stat.is_file() {
-            return Err(LocateError(PAS_DE_BD.into()).into());
+            return Err(PAS_DE_BD.into());
         }
         let reader = BufReader::new(File::open(stat)?);
         let stats: Value = serde_json::from_reader(reader)?;
@@ -160,7 +149,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     db.push("locate");
     db.set_extension("db");
     if !db.is_file() {
-        return Err(LocateError(PAS_DE_BD.into()).into());
+        return Err(PAS_DE_BD.into());
     }
     let db_file = File::open(db)?;
 

@@ -5,22 +5,11 @@ use {
     std::fs::{remove_file, rename, File},
     std::io::{BufWriter, Write},
     std::time::Instant,
-    std::{env, fmt},
+    std::env,
     walkdir::WalkDir,
     winapi::shared::minwindef::DWORD,
     winapi::um::fileapi::{GetDriveTypeW, GetLogicalDrives},
 };
-
-#[derive(Debug)]
-struct UpdatedbError(String);
-
-impl fmt::Display for UpdatedbError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for UpdatedbError {}
 
 #[derive(Default)]
 struct Statistics {
@@ -67,8 +56,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ld_bits: DWORD = unsafe { GetLogicalDrives() };
     if ld_bits == 0 {
         return Err(match std::io::Error::last_os_error().raw_os_error() {
-            Some(e) => UpdatedbError(format!("GetLogicalDrives: {}", e)).into(),
-            None => UpdatedbError("GetLogicalDrives: DOH!".into()).into(),
+            Some(e) => format!("GetLogicalDrives: {}", e).into(),
+            None => "GetLogicalDrives: DOH!".into(),
         });
     }
 

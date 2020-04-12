@@ -1,6 +1,5 @@
 use std::{
     error::Error,
-    fmt,
     fs::File,
     io,
     io::{
@@ -9,21 +8,6 @@ use std::{
     },
     path::Path,
 };
-
-#[derive(Debug)]
-pub enum FrError {
-    InvalidLabelError,
-}
-
-impl Error for FrError {}
-
-impl fmt::Display for FrError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            FrError::InvalidLabelError => write!(f, "Fichier updateDB invalide"),
-        }
-    }
-}
 
 pub struct FrCompress {
     init: bool,
@@ -167,7 +151,7 @@ impl Iterator for FrDecompress {
             if label == "LOCATEW" {
                 self.init = true;
             } else {
-                return Some(Err(FrError::InvalidLabelError.into()));
+                return Some(Err("Fichier updateDB invalide".into()));
             }
         }
 
