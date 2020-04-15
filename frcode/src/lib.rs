@@ -6,7 +6,8 @@ use std::{
         prelude::{BufRead, Write},
         BufReader, BufWriter,
     },
-    path::Path,
+    path::Path, 
+    string::FromUtf8Error,
 };
 
 pub struct FrCompress {
@@ -121,7 +122,7 @@ impl FrDecompress {
         }
     }
 
-    fn suffix_from_bytes(&mut self, len: usize) -> Result<String, Box<dyn Error>> {
+    fn suffix_from_bytes(&mut self, len: usize) -> Result<String, FromUtf8Error> {
         let bytes_mut = &mut self.bytes;
         let suffix = bytes_mut
             .take(len)
@@ -129,10 +130,7 @@ impl FrDecompress {
             .collect::<Vec<u8>>();
         assert_eq!(suffix.len(), len);
         
-        match String::from_utf8(suffix) {
-            Ok(suffix) => Ok(suffix),
-            Err(err) => Err(err.into()),
-        }
+        String::from_utf8(suffix)
     }
 }
 
