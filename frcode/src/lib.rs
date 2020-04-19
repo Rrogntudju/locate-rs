@@ -105,7 +105,7 @@ impl FrDecompress {
         let bytes_mut = &mut self.bytes;
         let count_1b = bytes_mut
             .take(1)
-            .filter_map(|b| b.ok())
+            .filter_map(Result::ok)
             .collect::<Vec<u8>>();
         if count_1b.len() != 1 {
             None
@@ -114,7 +114,7 @@ impl FrDecompress {
         } else {
             let count_2b = bytes_mut
                 .take(2)
-                .filter_map(|b| b.ok())
+                .filter_map(Result::ok)
                 .collect::<Vec<u8>>();
             assert_eq!(count_2b.len(), 2); 
             
@@ -126,7 +126,7 @@ impl FrDecompress {
         let bytes_mut = &mut self.bytes;
         let suffix = bytes_mut
             .take(len)
-            .filter_map(|b| b.ok())
+            .filter_map(Result::ok)
             .collect::<Vec<u8>>();
         assert_eq!(suffix.len(), len);
         
