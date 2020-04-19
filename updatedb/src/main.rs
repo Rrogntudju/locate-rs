@@ -90,7 +90,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut writer = BufWriter::new(File::create(&dirlist)?);
     for ld in ld_fix {
-        let walker = WalkDir::new(ld).into_iter().filter_map(|e| e.ok());
+        let walker = WalkDir::new(ld).into_iter().filter_map(Result::ok);
         for entry in walker {
             if let Ok(m) = entry.metadata() {
                 let p = entry.path().to_string_lossy(); // path may contain non-unicode sequence
