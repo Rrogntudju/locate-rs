@@ -61,21 +61,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         });
     }
 
-    let ld_all = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        .chars()
-        .map(|c| {
-            let mut dr = String::new();
-            dr.push(c);
-            dr + ":\\"
-        })
-        .collect::<Vec<String>>();
-
     let ld_fix = DwordBits::new(ld_bits)
-        .zip(ld_all)
-        .filter_map(|(b, ld)| {
+        .zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ".chars())
+        .filter_map(|(b, c)| {
             if !b {
                 return None; // not a logical drive
             }
+            let mut ld = String::with_capacity(3);
+            ld.push(c);
+            ld.push_str(":\\");
             // Convert an UTF-8 string to a null-delimited UTF-16 string
             let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
             ld_utf16.push(0);
