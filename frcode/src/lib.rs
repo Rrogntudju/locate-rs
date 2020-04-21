@@ -245,7 +245,7 @@ mod tests {
         );
         let decompressed_lines = FrDecompress::new(lines);
 
-        for (after, before) in decompressed_lines.filter_map(|l| l.ok()).zip(dirlist) {
+        for (after, before) in decompressed_lines.filter_map(Result::ok).zip(dirlist) {
             assert_eq!(before, after);
         }
     }
