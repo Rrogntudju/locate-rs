@@ -239,7 +239,7 @@ mod tests {
         let compressed_lines = FrCompress::new(lines);
         let lines = Cursor::new(
             compressed_lines
-                .filter_map(|l| l.ok())
+                .filter_map(Result::ok)
                 .flatten()
                 .collect::<Vec<u8>>(),
         );
