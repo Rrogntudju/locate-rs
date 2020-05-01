@@ -64,20 +64,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ld_fix = DwordBits::new(ld_bits)
         .zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ".chars())
         .filter_map(|(b, c)| {
-            if !b {
-                return None; // not a logical drive
-            }
-            let mut ld = String::with_capacity(3);
-            ld.push(c);
-            ld.push_str(":\\");
-            // Convert an UTF-8 string to a null-delimited UTF-16 string
-            let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
-            ld_utf16.push(0);
-            let ld_type = unsafe { GetDriveTypeW(ld_utf16.as_ptr()) };
-            if ld_type == 3 {
-                Some(ld)
-            } else {
-                None // not a fixed logical drive
+            if b {
+                let mut ld = String::with_capacity(3);
+                ld.push(c);
+                ld.push_str(":\\");
+                // Convert an UTF-8 string to a null-delimited UTF-16 string
+                let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
+                ld_utf16.push(0);
+                let ld_type = unsafe { GetDriveTypeW(ld_utf16.as_ptr()) };
+                if ld_type == 3 {
+                    Some(ld)
+                } else {
+                    None  // not a fixed logical drive
+                }
+            } else { 
+                None  // not a logical drive
             }
         })
         .collect::<Vec<String>>();
