@@ -1,3 +1,4 @@
+#![feature(str_strip)]
 use {
     clap::{App, Arg},
     frcode::FrDecompress,
@@ -124,15 +125,15 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut gs_builder = GlobSetBuilder::new();
     for pattern in patterns {
-        let pat = if pattern.starts_with("/") {
-            pattern.splitn(2, '/').collect::<Vec<&str>>()[1].to_owned() // pattern «as is»
+        let pattern = if let Some(pattern) = pattern.strip_prefix('/') {
+            pattern.to_owned() // pattern «as is»
         } else if pattern.starts_with("*") || pattern.ends_with("*") {
             pattern.to_owned() // pattern «as is»
         } else {
             format!("*{}*", pattern) // implicit globbing
         };
 
-        let mut g_builder = GlobBuilder::new(&pat);
+        let mut g_builder = GlobBuilder::new(&pattern);
         let g = g_builder
             .case_insensitive(!is_case)
             .literal_separator(false)
