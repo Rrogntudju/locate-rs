@@ -1,4 +1,3 @@
-#![feature(str_strip)]
 use {
     clap::{App, Arg},
     frcode::FrDecompress,
