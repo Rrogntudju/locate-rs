@@ -7,7 +7,6 @@ use {
     std::error::Error,
     std::fs::File,
     std::io::{stdout, BufReader, BufWriter, Write},
-    std::sync::mpsc,
     std::thread,
     std::env,
 };
@@ -23,7 +22,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("locate")
-        .version("0.6.3")
+        .version("0.6.4")
         .arg(
             Arg::with_name("stats")
                 .help("don't search for entries, print statistics about database")
@@ -154,7 +153,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let db_file = File::open(db)?;
 
     // run the FrDecompress iterator on his own thread
-    let (tx, rx) = mpsc::channel();
+    let (tx, rx) = flume::unbounded();
     thread::spawn(move || {
         let decompressed_entries = FrDecompress::new(BufReader::new(db_file));
         for entry in decompressed_entries {
