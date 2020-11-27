@@ -4,11 +4,11 @@ use {
     globset::{GlobBuilder, GlobSetBuilder},
     num_format::{Locale, ToFormattedString},
     serde_json::Value,
+    std::env,
     std::error::Error,
     std::fs::File,
     std::io::{stdout, BufReader, BufWriter, Write},
     std::thread,
-    std::env,
 };
 
 const PAS_DE_BD: &str = "La base de données est inexistante. Exécuter updatedb.exe";
@@ -61,11 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .takes_value(true)
                 .validator(is_usize),
         )
-        .arg(
-            Arg::with_name("pattern")
-                .required_unless("stats")
-                .min_values(1),
-        )
+        .arg(Arg::with_name("pattern").required_unless("stats").min_values(1))
         .get_matches();
 
     let loc = &Locale::fr_CA;
@@ -86,28 +82,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         println!("Base de données locate.db :");
         println!("      {} répertoires", dirs.to_formatted_string(loc));
         println!("      {} fichiers", files.to_formatted_string(loc));
-        println!(
-            "      {} octets dans les noms de fichier",
-            files_bytes.to_formatted_string(loc)
-        );
+        println!("      {} octets dans les noms de fichier", files_bytes.to_formatted_string(loc));
         println!(
             "      {} octets utilisés pour stocker la base de données",
             db_size.to_formatted_string(loc)
         );
-        println!(
-            "      {} min {} sec pour générer la base de données",
-            elapsed / 60,
-            elapsed % 60
-        );
+        println!("      {} min {} sec pour générer la base de données", elapsed / 60, elapsed % 60);
         return Ok(());
     }
 
     let is_limit = matches.is_present("limit");
-    let limit = matches
-        .value_of("limit")
-        .unwrap_or("0")
-        .parse::<usize>()
-        .unwrap_or(0);
+    let limit = matches.value_of("limit").unwrap_or("0").parse::<usize>().unwrap_or(0);
 
     let is_count = matches.is_present("count");
     if is_limit && limit == 0 {
@@ -184,12 +169,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             &entry
         };
 
-        if is_all && gs.matches(entry_test).len() != glob_count {
-            continue;
-        } else if !gs.is_match(entry_test) {
+        if glob_count == 1 || !is_all {
+            if !gs.is_match(entry_test) {
+                continue;
+            }
+        } else if gs.matches(entry_test).len() != glob_count {
             continue;
         }
-
+        
         if !is_count {
             let entry_out = if is_dir {
                 entry_test // dir entry minus the \

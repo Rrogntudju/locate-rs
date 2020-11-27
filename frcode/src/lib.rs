@@ -6,7 +6,7 @@ use std::{
         prelude::{BufRead, Write},
         BufReader, BufWriter,
     },
-    path::Path, 
+    path::Path,
     string::FromUtf8Error,
 };
 
@@ -103,33 +103,24 @@ impl FrDecompress {
 
     fn count_from_bytes(&mut self) -> Option<i16> {
         let bytes_mut = &mut self.bytes;
-        let count_1b = bytes_mut
-            .take(1)
-            .filter_map(Result::ok)
-            .collect::<Vec<u8>>();
+        let count_1b = bytes_mut.take(1).filter_map(Result::ok).collect::<Vec<u8>>();
         if count_1b.len() != 1 {
             None
         } else if count_1b[0] != 0x80 {
             Some(i8::from_be_bytes([count_1b[0]]) as i16)
         } else {
-            let count_2b = bytes_mut
-                .take(2)
-                .filter_map(Result::ok)
-                .collect::<Vec<u8>>();
-            assert_eq!(count_2b.len(), 2); 
-            
+            let count_2b = bytes_mut.take(2).filter_map(Result::ok).collect::<Vec<u8>>();
+            assert_eq!(count_2b.len(), 2);
+
             Some(i16::from_be_bytes([count_2b[0], count_2b[1]]))
         }
     }
 
     fn suffix_from_bytes(&mut self, len: usize) -> Result<String, FromUtf8Error> {
         let bytes_mut = &mut self.bytes;
-        let suffix = bytes_mut
-            .take(len)
-            .filter_map(Result::ok)
-            .collect::<Vec<u8>>();
+        let suffix = bytes_mut.take(len).filter_map(Result::ok).collect::<Vec<u8>>();
         assert_eq!(suffix.len(), len);
-        
+
         String::from_utf8(suffix)
     }
 }
@@ -237,12 +228,7 @@ mod tests {
 
         let lines = Cursor::new(dirlist.join("\n"));
         let compressed_lines = FrCompress::new(lines);
-        let lines = Cursor::new(
-            compressed_lines
-                .filter_map(Result::ok)
-                .flatten()
-                .collect::<Vec<u8>>(),
-        );
+        let lines = Cursor::new(compressed_lines.filter_map(Result::ok).flatten().collect::<Vec<u8>>());
         let decompressed_lines = FrDecompress::new(lines);
 
         for (after, before) in decompressed_lines.filter_map(Result::ok).zip(dirlist) {

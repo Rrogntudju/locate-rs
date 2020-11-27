@@ -1,11 +1,11 @@
 use {
     frcode::compress_file,
     serde_json::json,
+    std::env,
     std::error::Error,
     std::fs::{remove_file, rename, File},
     std::io::{BufWriter, Write},
     std::time::Instant,
-    std::env,
     walkdir::WalkDir,
     winapi::shared::minwindef::DWORD,
     winapi::um::fileapi::{GetDriveTypeW, GetLogicalDrives},
@@ -27,10 +27,7 @@ struct DwordBits {
 
 impl DwordBits {
     fn new(dword: DWORD) -> DwordBits {
-        DwordBits {
-            dword,
-            ctr: 0,
-        }
+        DwordBits { dword, ctr: 0 }
     }
 }
 
@@ -75,10 +72,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 if ld_type == 3 {
                     Some(ld)
                 } else {
-                    None  // not a fixed logical drive
+                    None // not a fixed logical drive
                 }
-            } else { 
-                None  // not a logical drive
+            } else {
+                None // not a logical drive
             }
         })
         .collect::<Vec<String>>();
