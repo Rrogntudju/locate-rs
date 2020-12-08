@@ -146,7 +146,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 if !is_limit {
                     eprintln!("{}", e);
                 }
-                return;
+                break;
             }
         }
     });
