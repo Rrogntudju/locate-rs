@@ -69,7 +69,7 @@ impl Iterator for FrCompress {
                     out_bytes.extend_from_slice(&(suffix_len as i8).to_be_bytes()); // 1 byte length
                 } else {
                     out_bytes.push(0x80);
-                    assert!(suffix_len < 32768, "assert failed: {} < 32768", suffix_len);
+                    assert!(suffix_len < 32768, "{} < 32768", suffix_len);
                     out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes()); // 2 bytes length big-endian
                 }
                 out_bytes.extend_from_slice(&line[prefix_len..].as_bytes());
