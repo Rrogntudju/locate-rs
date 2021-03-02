@@ -22,7 +22,7 @@ fn is_usize(v: String) -> Result<(), String> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("locate")
-        .version("0.6.5")
+        .version("0.6.6")
         .arg(
             Arg::with_name("stats")
                 .help("don't search for entries, print statistics about database")
@@ -101,6 +101,29 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         return Ok(()); // nothing to do
     }
+    
+    let mut db = env::temp_dir();
+    db.push("locate");
+    db.set_extension("db");
+    if !db.is_file() {
+        return Err(PAS_DE_BD.into());
+    }
+    let db_file = File::open(db)?;
+
+    // run the FrDecompress iterator on his own thread
+    let (tx, rx) = flume::unbounded();
+    thread::spawn(move || {
+        let decompressed_entries = FrDecompress::new(BufReader::new(db_file));
+        for entry in decompressed_entries {
+            if let Err(e) = tx.send(entry.unwrap()) {
+                if !is_limit {
+                    eprintln!("{}", e);
+                }
+                break;
+            }
+        }
+    });
+
     let is_all = matches.is_present("all");
     let is_base = matches.is_present("base");
     let is_case = matches.is_present("case");
@@ -128,28 +151,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let gs = gs_builder.build()?;
     let glob_count = gs.len();
-
-    let mut db = env::temp_dir();
-    db.push("locate");
-    db.set_extension("db");
-    if !db.is_file() {
-        return Err(PAS_DE_BD.into());
-    }
-    let db_file = File::open(db)?;
-
-    // run the FrDecompress iterator on his own thread
-    let (tx, rx) = flume::unbounded();
-    thread::spawn(move || {
-        let decompressed_entries = FrDecompress::new(BufReader::new(db_file));
-        for entry in decompressed_entries {
-            if let Err(e) = tx.send(entry.unwrap()) {
-                if !is_limit {
-                    eprintln!("{}", e);
-                }
-                break;
-            }
-        }
-    });
 
     let stdout = stdout();
     let mut out = BufWriter::new(stdout.lock());
