@@ -139,14 +139,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             format!("*{}*", pattern) // implicit globbing
         };
 
-        let mut g_builder = GlobBuilder::new(&pattern);
-        let g = g_builder
+        let g_builder = GlobBuilder::new(&pattern)
             .case_insensitive(!is_case)
             .literal_separator(false)
             .backslash_escape(false)
             .build()?;
 
-        gs_builder.add(g);
+        gs_builder.add(g_builder);
     }
 
     let gs = gs_builder.build()?;
