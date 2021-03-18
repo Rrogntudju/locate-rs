@@ -54,6 +54,7 @@ fn timer() -> i32 {
         print_time(elapsed);
         exit_code
     } else {
+        print_time(Duration::new(0, 0));
         0
     }
 }
