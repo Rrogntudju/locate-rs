@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use {
     ctrlc::set_handler,
     std::env,
@@ -8,11 +10,12 @@ use {
 
 const STATUS_CONTROL_C_EXIT: i32 = -1073741510; // 0xC000013A_u32
 
-fn print_time(elapsed: u128) {
-    let m = elapsed / 60_000;
-    let rms = elapsed % 60_000;
-    let s = rms / 1_000;
-    println!("\n{}m {}s {}ms", m, s, rms % 1_000);
+fn print_time(elapsed: Duration) {
+    let secs = elapsed.as_secs();
+    let m = secs / 60;
+    let s = secs % 60;
+    let ms = elapsed.subsec_millis();
+    println!("\n{}m {}s {}ms", m, s, ms);
 }
 
 fn timer() -> i32 {
@@ -26,13 +29,13 @@ fn timer() -> i32 {
         let start = Arc::new(Instant::now());
         let s = start.clone();
         set_handler(move || {
-            print_time(s.elapsed().as_millis());
+            print_time(s.elapsed());
             exit(STATUS_CONTROL_C_EXIT);
         })
         .expect("Error setting Ctrl-C handler");
 
         let status = cmd.status();
-        let elapsed = start.elapsed().as_millis();
+        let elapsed = start.elapsed();
 
         let mut exit_code = -1;
         match status {
