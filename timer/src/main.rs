@@ -8,15 +8,14 @@ use {
 
 const STATUS_CONTROL_C_EXIT: i32 = -1073741510; // 0xC000013A_u32
 
-fn time_and_exit(elapsed: u128, exit_code: i32) {
+fn print_time(elapsed: u128) {
     let m = elapsed / 60_000;
     let rms = elapsed % 60_000;
     let s = rms / 1_000;
     println!("\n{}m {}s {}ms", m, s, rms % 1_000);
-    exit(exit_code);
 }
 
-fn main() {
+fn timer() -> i32 {
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
         let mut cmd = Command::new(&args[1]);
@@ -27,7 +26,8 @@ fn main() {
         let start = Arc::new(Instant::now());
         let s = start.clone();
         set_handler(move || {
-            time_and_exit(s.elapsed().as_millis(), STATUS_CONTROL_C_EXIT);
+            print_time(s.elapsed().as_millis());
+            exit(STATUS_CONTROL_C_EXIT);
         })
         .expect("Error setting Ctrl-C handler");
 
@@ -48,8 +48,13 @@ fn main() {
                 }
             }
         }
-        time_and_exit(elapsed, exit_code);
+        print_time(elapsed);
+        exit_code
     } else {
-        time_and_exit(0, 0);
+        0
     }
+}
+
+fn main() {
+    exit(timer());
 }
