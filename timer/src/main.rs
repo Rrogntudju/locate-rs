@@ -12,10 +12,7 @@ const STATUS_CONTROL_C_EXIT: i32 = -1073741510; // 0xC000013A_u32
 
 fn print_time(elapsed: Duration) {
     let secs = elapsed.as_secs();
-    let m = secs / 60;
-    let s = secs % 60;
-    let ms = elapsed.subsec_millis();
-    println!("\n{}m {}s {}ms", m, s, ms);
+    println!("\n{}m {}s {}ms", secs / 60, secs % 60, elapsed.subsec_millis());
 }
 
 fn timer() -> i32 {
