@@ -10,15 +10,15 @@ use std::{
     string::FromUtf8Error,
 };
 
-pub struct FrCompress {
+pub struct FrCompress<'a> {
     init: bool,
     prec_prefix_len: i16,
     prec: String,
-    lines: Box<dyn Iterator<Item = io::Result<String>>>,
+    lines: Box<dyn Iterator<Item = io::Result<String>> + 'a>,
 }
 
-impl FrCompress {
-    pub fn new(reader: impl BufRead + 'static) -> FrCompress {
+impl<'a> FrCompress<'a> {
+    pub fn new(reader: impl BufRead + 'a) -> FrCompress<'a> {
         FrCompress {
             init: false,
             prec_prefix_len: 0,
@@ -28,7 +28,7 @@ impl FrCompress {
     }
 }
 
-impl Iterator for FrCompress {
+impl<'a> Iterator for FrCompress<'a> {
     type Item = io::Result<Vec<u8>>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -84,15 +84,15 @@ impl Iterator for FrCompress {
     }
 }
 
-pub struct FrDecompress {
+pub struct FrDecompress<'a> {
     init: bool,
     prec_prefix_len: i16,
     prec: String,
-    bytes: Box<dyn Iterator<Item = io::Result<u8>>>,
+    bytes: Box<dyn Iterator<Item = io::Result<u8>> + 'a>,
 }
 
-impl FrDecompress {
-    pub fn new(reader: impl BufRead + 'static) -> FrDecompress {
+impl<'a> FrDecompress<'a> {
+    pub fn new(reader: impl BufRead + 'a) -> FrDecompress<'a> {
         FrDecompress {
             init: false,
             prec_prefix_len: 0,
@@ -125,7 +125,7 @@ impl FrDecompress {
     }
 }
 
-impl Iterator for FrDecompress {
+impl<'a> Iterator for FrDecompress<'a> {
     type Item = Result<String, Box<dyn Error>>;
 
     fn next(&mut self) -> Option<Self::Item> {
