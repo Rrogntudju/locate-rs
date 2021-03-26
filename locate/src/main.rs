@@ -161,10 +161,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             continue; // no need to match on a dir entry
         }
 
-        let entry_test = if is_base {
-            entry.rsplitn(2, '\\').collect::<Vec<&str>>()[0] // basename
-        } else if is_dir {
-            entry.rsplitn(2, '\\').collect::<Vec<&str>>()[1] // dir entry minus the \
+        let entry_test = if is_dir {
+            entry.strip_suffix('\\').unwrap()   // dir entry minus the \
+        } else if is_base {
+            entry.rsplit_once('\\').unwrap().1   // basename
         } else {
             &entry
         };
