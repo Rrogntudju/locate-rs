@@ -178,12 +178,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         
         if !is_count {
-            let entry_out = if is_dir {
-                entry_test // dir entry minus the \
+            if is_dir {
+                out.write_all(entry_test.as_bytes())?;  
             } else {
-                &entry
+                out.write_all(entry.as_bytes())?;
             };
-            out.write_all(entry_out.as_bytes())?;
             out.write_all(b"\n")?;
         }
 
