@@ -156,17 +156,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut ctr: usize = 0;
 
     for entry in rx {
-        let is_dir = entry.ends_with('\\'); // dir entries are terminated with a \
-        if is_base && is_dir {
-            continue; // no need to match on a dir entry
-        }
-
-        let entry_test = if is_dir {
-            entry.strip_suffix('\\').unwrap()   // dir entry minus the \
-        } else if is_base {
-            entry.rsplit_once('\\').unwrap().1   // basename
-        } else {
-            &entry
+        let (mut entry_test, is_dir) = match entry.strip_suffix('\\') { // dir entries are terminated with a \
+            Some(dir) => (dir, true),   
+            None => (entry.as_str(), false),
+        };
+        
+        if is_base {
+            if is_dir {
+                continue; // no need to match on a dir entry
+            } else  {
+                entry_test = entry.rsplit_once('\\').unwrap().1;   // basename
+            }
         };
 
         if glob_count == 1 || !is_all {
