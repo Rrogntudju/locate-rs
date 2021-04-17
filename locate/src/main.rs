@@ -166,7 +166,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             if is_dir {
                 continue; // no need to match on a dir entry
             } else  {
-                (_, entry_test) = entry.rsplit_once('\\').unwrap();   // basename
+                (.., entry_test) = entry.rsplit_once('\\').unwrap();   // basename
             }
         };
 
