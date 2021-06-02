@@ -102,7 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         return Ok(()); // nothing to do
     }
-    
+
     let mut db = env::temp_dir();
     db.push("locate");
     db.set_extension("db");
@@ -157,16 +157,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut ctr: usize = 0;
 
     for entry in rx {
-        let (mut entry_test, is_dir) = match entry.strip_suffix('\\') { // dir entries are terminated with a \
-            Some(dir) => (dir, true),   
+        let (mut entry_test, is_dir) = match entry.strip_suffix('\\') {
+            // dir entries are terminated with a \
+            Some(dir) => (dir, true),
             None => (entry.as_str(), false),
         };
-        
+
         if is_base {
             if is_dir {
                 continue; // no need to match on a dir entry
-            } else  {
-                (_, entry_test) = entry.rsplit_once('\\').unwrap();   // basename
+            } else {
+                (_, entry_test) = entry.rsplit_once('\\').unwrap(); // basename
             }
         };
 
@@ -177,10 +178,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         } else if gs.matches(entry_test).len() != glob_count {
             continue;
         }
-        
+
         if !is_count {
             if is_dir {
-                out.write_all(entry_test.as_bytes())?;  
+                out.write_all(entry_test.as_bytes())?;
             } else {
                 out.write_all(entry.as_bytes())?;
             };

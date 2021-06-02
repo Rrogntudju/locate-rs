@@ -1,4 +1,9 @@
+mod bindings {
+    windows::include_bindings!();
+}
+
 use {
+    bindings::Windows::Win32::{Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives, System::SystemServices::PWSTR},
     frcode::compress_file,
     serde_json::json,
     std::env,
@@ -7,8 +12,6 @@ use {
     std::io::{BufWriter, Write},
     std::time::Instant,
     walkdir::WalkDir,
-    winapi::shared::minwindef::DWORD,
-    winapi::um::fileapi::{GetDriveTypeW, GetLogicalDrives},
 };
 
 #[derive(Default)]
@@ -21,12 +24,12 @@ struct Statistics {
 }
 
 struct DwordBits {
-    dword: DWORD,
+    dword: u32,
     ctr: u8,
 }
 
 impl DwordBits {
-    fn new(dword: DWORD) -> DwordBits {
+    fn new(dword: u32) -> DwordBits {
         DwordBits { dword, ctr: 0 }
     }
 }
@@ -50,7 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let start = Instant::now();
 
     // Get the list of the fixed logical drives
-    let ld_bits: DWORD = unsafe { GetLogicalDrives() };
+    let ld_bits: u32 = unsafe { GetLogicalDrives() };
     if ld_bits == 0 {
         return Err(match std::io::Error::last_os_error().raw_os_error() {
             Some(e) => format!("GetLogicalDrives: {}", e).into(),
@@ -68,7 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Convert an UTF-8 string to a null-delimited UTF-16 string
                 let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
                 ld_utf16.push(0);
-                let ld_type = unsafe { GetDriveTypeW(ld_utf16.as_ptr()) };
+                let ld_type = unsafe { GetDriveTypeW(PWSTR(ld_utf16.as_mut_ptr())) };
                 if ld_type == 3 {
                     Some(ld)
                 } else {
@@ -145,7 +148,7 @@ mod tests {
 
     #[test]
     fn dwordbits_ok() {
-        let mut bits = DwordBits::new(12 as DWORD);
+        let mut bits = DwordBits::new(12 as u32);
         assert_eq!(bits.next(), Some(false));
         assert_eq!(bits.next(), Some(false));
         assert_eq!(bits.next(), Some(true));
