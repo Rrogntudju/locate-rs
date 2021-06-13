@@ -3,7 +3,7 @@ mod bindings {
 }
 
 use {
-    bindings::Windows::Win32::{Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives, System::SystemServices::PWSTR},
+    bindings::Windows::Win32::{Foundation::PWSTR, Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives},
     frcode::compress_file,
     serde_json::json,
     std::env,
