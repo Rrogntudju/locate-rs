@@ -66,13 +66,11 @@ impl<'a> Iterator for FrCompress<'a> {
                 // Output the line without the prefix
                 let suffix_len: usize = line.len() - prefix_len;
                 if suffix_len < 128 {
-                    out_bytes.extend_from_slice(&(suffix_len as i8).to_be_bytes());
-                // 1 byte length
+                    out_bytes.extend_from_slice(&(suffix_len as i8).to_be_bytes()); // 1 byte length
                 } else {
                     out_bytes.push(0x80);
                     assert!(suffix_len < 32768, "{} < 32768", suffix_len);
-                    out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes());
-                    // 2 bytes length big-endian
+                    out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes()); // 2 bytes length big-endian
                 }
                 out_bytes.extend_from_slice(&line[prefix_len..].as_bytes());
                 self.prec_prefix_len = prefix_len as i16;
