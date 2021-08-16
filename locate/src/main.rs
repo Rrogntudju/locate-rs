@@ -195,7 +195,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     if is_count {
-        write!(out, "{}\n", ctr.to_formatted_string(loc))?;
+        writeln!(out, "{}", ctr.to_formatted_string(loc))?;
     }
     out.flush()?;
 

@@ -72,7 +72,7 @@ impl<'a> Iterator for FrCompress<'a> {
                     assert!(suffix_len < 32768, "{} < 32768", suffix_len);
                     out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes()); // 2 bytes length big-endian
                 }
-                out_bytes.extend_from_slice(&line[prefix_len..].as_bytes());
+                out_bytes.extend_from_slice(line[prefix_len..].as_bytes());
                 self.prec_prefix_len = prefix_len as i16;
                 self.prec = line;
 
