@@ -111,7 +111,6 @@ impl<'a> FrDecompress<'a> {
         } else {
             let count_2b = bytes_mut.take(2).filter_map(Result::ok).collect::<Vec<u8>>();
             debug_assert_eq!(count_2b.len(), 2);
-
             Some(i16::from_be_bytes([count_2b[0], count_2b[1]]))
         }
     }
