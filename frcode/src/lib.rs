@@ -119,7 +119,6 @@ impl<'a> FrDecompress<'a> {
         let bytes_mut = &mut self.bytes;
         let suffix = bytes_mut.take(len).filter_map(Result::ok).collect::<Vec<u8>>();
         debug_assert_eq!(suffix.len(), len);
-
         String::from_utf8(suffix)
     }
 }
