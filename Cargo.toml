@@ -1,8 +1,6 @@
 [workspace]
 
-members = [
-    "frcode","updatedb", "locate", "timer"
-]
+members = [ "crates/*" ]
 
 [profile.release]
 opt-level = 3
