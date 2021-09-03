@@ -2,7 +2,7 @@
 name = "locate"
 version = "0.6.7"
 authors = ["Rrogntudju"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 frcode = {path = "../frcode"}

@@ -2,6 +2,6 @@
 name = "frcode"
 version = "0.1.7"
 authors = ["Rrogntudju"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
