@@ -100,7 +100,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     stats.dirs += 1;
                 } else {
                     write!(writer, "{}\n", p)?;
-                    stats.files += 1;
+                    stats.files += 1;                                       
                     stats.files_bytes += p.len();
                 }
             }
@@ -139,6 +139,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     path.set_extension("txt");
     let mut writer = BufWriter::new(File::create(path)?);
     writer.write_all(j.as_bytes())?;
+    writer.flush()?;
     Ok(())
 }
 
