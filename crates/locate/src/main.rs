@@ -13,55 +13,55 @@ use {
 
 const PAS_DE_BD: &str = "La base de données est inexistante. Exécuter updatedb.exe";
 
-fn is_usize(v: String) -> Result<(), String> {
+fn is_usize(v: &str) -> Result<(), String> {
     match v.parse::<usize>() {
         Ok(_) => Ok(()),
-        Err(_) => Err(v),
+        Err(_) => Err(v.to_owned()),
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("locate")
-        .version("0.6.6")
+        .version("0.6.8")
         .arg(
-            Arg::with_name("stats")
+            Arg::new("stats")
                 .help("don't search for entries, print statistics about database")
-                .short("S")
+                .short('S')
                 .long("statistics"),
         )
         .arg(
-            Arg::with_name("all")
+            Arg::new("all")
                 .help("only print entries that match all patterns")
-                .short("a")
+                .short('a')
                 .long("all"),
         )
         .arg(
-            Arg::with_name("base")
+            Arg::new("base")
                 .help("match only the base name of path names")
-                .short("b")
+                .short('b')
                 .long("basename"),
         )
         .arg(
-            Arg::with_name("count")
+            Arg::new("count")
                 .help("only print number of found entries")
-                .short("c")
+                .short('c')
                 .long("count"),
         )
         .arg(
-            Arg::with_name("case")
+            Arg::new("case")
                 .help("case distinctions when matching patterns")
-                .short("C")
+                .short('C')
                 .long("case-sensitive"),
         )
         .arg(
-            Arg::with_name("limit")
+            Arg::new("limit")
                 .help("limit output (or counting) to LIMIT entries")
-                .short("l")
+                .short('l')
                 .long("limit")
                 .takes_value(true)
                 .validator(is_usize),
         )
-        .arg(Arg::with_name("pattern").required_unless("stats").min_values(1))
+        .arg(Arg::new("pattern").required_unless_present("stats").min_values(1))
         .get_matches();
 
     let loc = &Locale::fr_CA;
