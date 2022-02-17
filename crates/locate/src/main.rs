@@ -1,5 +1,5 @@
 use {
-    clap::{App, Arg},
+    clap::{Command, Arg},
     frcode::FrDecompress,
     globset::{GlobBuilder, GlobSetBuilder},
     num_format::{Locale, ToFormattedString},
@@ -21,7 +21,7 @@ fn is_usize(v: &str) -> Result<(), String> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let matches = App::new("locate")
+    let matches = Command::new("locate")
         .version("0.6.8")
         .arg(
             Arg::new("stats")

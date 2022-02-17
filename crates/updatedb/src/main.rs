@@ -1,9 +1,5 @@
-mod bindings {
-    windows::include_bindings!();
-}
-
 use {
-    bindings::Windows::Win32::{Foundation::PWSTR, Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives},
+    windows::Win32::{Foundation::PWSTR, Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives},
     frcode::compress_file,
     serde_json::json,
     std::env,
