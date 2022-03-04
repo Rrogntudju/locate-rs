@@ -1,5 +1,5 @@
 use {
-    clap::{Command, Arg},
+    clap::{Arg, Command},
     frcode::FrDecompress,
     globset::{GlobBuilder, GlobSetBuilder},
     num_format::{Locale, ToFormattedString},
@@ -29,24 +29,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .short('S')
                 .long("statistics"),
         )
-        .arg(
-            Arg::new("all")
-                .help("only print entries that match all patterns")
-                .short('a')
-                .long("all"),
-        )
+        .arg(Arg::new("all").help("only print entries that match all patterns").short('a').long("all"))
         .arg(
             Arg::new("base")
                 .help("match only the base name of path names")
                 .short('b')
                 .long("basename"),
         )
-        .arg(
-            Arg::new("count")
-                .help("only print number of found entries")
-                .short('c')
-                .long("count"),
-        )
+        .arg(Arg::new("count").help("only print number of found entries").short('c').long("count"))
         .arg(
             Arg::new("case")
                 .help("case distinctions when matching patterns")
@@ -163,12 +153,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         };
 
         if is_base {
-            if is_dir {
-                continue; // no need to match on a dir entry
-            } else {
-                entry_test = entry.rsplit_once('\\').unwrap().1; // basename
+            match is_dir {
+                false => entry_test = entry.rsplit_once('\\').unwrap().1, // basename
+                true => continue,                                         // no need to match on a dir entry
             }
-        };
+        }
 
         if glob_count == 1 || !is_all {
             if !gs.is_match(entry_test) {
@@ -179,11 +168,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         if !is_count {
-            if is_dir {
-                out.write_all(entry_test.as_bytes())?;
-            } else {
-                out.write_all(entry.as_bytes())?;
-            };
+            match is_dir {
+                false => out.write_all(entry.as_bytes())?,
+                true => out.write_all(entry_test.as_bytes())?,
+            }
             out.write_all(b"\n")?;
         }
 

@@ -1,5 +1,4 @@
 use {
-    windows::Win32::{Foundation::PWSTR, Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives},
     frcode::compress_file,
     serde_json::json,
     std::env,
@@ -8,6 +7,7 @@ use {
     std::io::{BufWriter, Write},
     std::time::Instant,
     walkdir::WalkDir,
+    windows::Win32::{Foundation::PWSTR, Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives},
 };
 
 #[derive(Default)]
@@ -96,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     stats.dirs += 1;
                 } else {
                     write!(writer, "{}\n", p)?;
-                    stats.files += 1;                                       
+                    stats.files += 1;
                     stats.files_bytes += p.len();
                 }
             }
