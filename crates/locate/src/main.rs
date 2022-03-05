@@ -153,10 +153,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         };
 
         if is_base {
-            match is_dir {
-                false => entry_test = entry.rsplit_once('\\').unwrap().1, // basename
-                true => continue,                                         // no need to match on a dir entry
+            if is_dir {
+                continue; // no need to match on a dir entry
             }
+            entry_test = entry.rsplit_once('\\').unwrap().1; // basename
         }
 
         if glob_count == 1 || !is_all {
