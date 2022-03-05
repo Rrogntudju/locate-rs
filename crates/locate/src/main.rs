@@ -1,7 +1,7 @@
 use {
     clap::{Arg, Command},
     frcode::FrDecompress,
-    globset::{GlobBuilder, GlobSetBuilder},
+    globset::{Candidate, GlobBuilder, GlobSetBuilder},
     num_format::{Locale, ToFormattedString},
     serde_json::Value,
     std::env,
@@ -146,32 +146,31 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut ctr: usize = 0;
 
     for entry in rx {
-        let (mut entry_test, is_dir) = match entry.strip_suffix('\\') {
-            // dir entries are terminated with a \
+        // dir entries are terminated with a \
+        let (entry_out, is_dir) = match entry.strip_suffix('\\') {
             Some(dir) => (dir, true),
             None => (entry.as_str(), false),
         };
 
-        if is_base {
+        let candidate = if is_base {
             if is_dir {
                 continue; // no need to match on a dir entry
             }
-            entry_test = entry.rsplit_once('\\').unwrap().1; // basename
-        }
+            Candidate::new(entry_out.rsplit_once('\\').unwrap().1) // basename
+        } else {
+            Candidate::new(entry_out)
+        };
 
         if glob_count == 1 || !is_all {
-            if !gs.is_match(entry_test) {
+            if !gs.is_match_candidate(&candidate) {
                 continue;
             }
-        } else if gs.matches(entry_test).len() != glob_count {
+        } else if gs.matches_candidate(&candidate).len() != glob_count {
             continue;
         }
 
         if !is_count {
-            match is_base {
-                false => out.write_all(entry_test.as_bytes())?,
-                true => out.write_all(entry.as_bytes())?,
-            }
+            out.write_all(entry_out.as_bytes())?;
             out.write_all(b"\n")?;
         }
 
