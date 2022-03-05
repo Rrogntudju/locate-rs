@@ -168,9 +168,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
 
         if !is_count {
-            match is_dir {
-                false => out.write_all(entry.as_bytes())?,
-                true => out.write_all(entry_test.as_bytes())?,
+            match is_base {
+                false => out.write_all(entry_test.as_bytes())?,
+                true => out.write_all(entry.as_bytes())?,
             }
             out.write_all(b"\n")?;
         }
