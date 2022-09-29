@@ -96,7 +96,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let is_limit: bool = matches.value_source("limit") == Some(ValueSource::CommandLine);
+    let is_limit = matches.value_source("limit") == Some(ValueSource::CommandLine);
     let limit: usize = *matches.get_one("limit").unwrap_or(&0);
 
     let is_count: bool = *matches.get_one("count").unwrap();
