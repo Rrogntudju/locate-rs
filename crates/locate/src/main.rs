@@ -1,3 +1,5 @@
+use clap::parser::ValueSource;
+
 use {
     clap::{builder::ValueRange, value_parser, Arg, ArgAction, Command},
     frcode::FrDecompress,
@@ -20,21 +22,36 @@ fn main() -> Result<(), Box<dyn Error>> {
             Arg::new("stats")
                 .help("don't search for entries, print statistics about database")
                 .short('S')
-                .long("statistics"),
+                .long("statistics")
+                .action(ArgAction::SetTrue),
         )
-        .arg(Arg::new("all").help("only print entries that match all patterns").short('a').long("all"))
+        .arg(
+            Arg::new("all")
+                .help("only print entries that match all patterns")
+                .short('a')
+                .long("all")
+                .action(ArgAction::SetTrue),
+        )
         .arg(
             Arg::new("base")
                 .help("match only the base name of path names")
                 .short('b')
-                .long("basename"),
+                .long("basename")
+                .action(ArgAction::SetTrue),
         )
-        .arg(Arg::new("count").help("only print number of found entries").short('c').long("count"))
+        .arg(
+            Arg::new("count")
+                .help("only print number of found entries")
+                .short('c')
+                .long("count")
+                .action(ArgAction::SetTrue),
+        )
         .arg(
             Arg::new("case")
                 .help("case distinctions when matching patterns")
                 .short('C')
-                .long("case-sensitive"),
+                .long("case-sensitive")
+                .action(ArgAction::SetTrue),
         )
         .arg(
             Arg::new("limit")
@@ -44,11 +61,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .action(ArgAction::Set)
                 .value_parser(value_parser!(usize)),
         )
-        .arg(Arg::new("pattern").required_unless_present("stats").num_args(ValueRange::new(1..)))
+        .arg(
+            Arg::new("pattern")
+                .required_unless_present("stats")
+                .num_args(ValueRange::new(1..))
+                .action(ArgAction::Append),
+        )
         .get_matches();
 
     let loc = &Locale::fr_CA;
-    if matches.contains_id("stats") {
+    if *matches.get_one("stats").unwrap() {
         let mut stat = env::temp_dir();
         stat.push("locate");
         stat.set_extension("txt");
@@ -74,10 +96,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let is_limit = matches.contains_id("limit");
-    let limit = *matches.get_one("limit").unwrap_or(&0);
+    let is_limit: bool = matches.value_source("limit") == Some(ValueSource::CommandLine);
+    let limit: usize = *matches.get_one("limit").unwrap_or(&0);
 
-    let is_count = matches.contains_id("count");
+    let is_count: bool = *matches.get_one("count").unwrap();
     if is_limit && limit == 0 {
         if is_count {
             println!("0");
@@ -107,9 +129,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    let is_all = matches.contains_id("all");
-    let is_base = matches.contains_id("base");
-    let is_case = matches.contains_id("case");
+    let is_all: bool = *matches.get_one("all").unwrap();
+    let is_base: bool = *matches.get_one("base").unwrap();
+    let is_case: bool = *matches.get_one("case").unwrap();
     let patterns = matches.get_many("pattern").unwrap().collect::<Vec<&String>>();
 
     let mut gs_builder = GlobSetBuilder::new();
