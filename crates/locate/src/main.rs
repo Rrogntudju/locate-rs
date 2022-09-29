@@ -1,5 +1,5 @@
 use {
-    clap::{Arg, Command},
+    clap::{builder::ValueRange, value_parser, Arg, ArgAction, Command},
     frcode::FrDecompress,
     globset::{Candidate, GlobBuilder, GlobSetBuilder},
     num_format::{Locale, ToFormattedString},
@@ -13,16 +13,9 @@ use {
 
 const PAS_DE_BD: &str = "La base de données est inexistante. Exécuter updatedb.exe";
 
-fn is_usize(v: &str) -> Result<(), String> {
-    match v.parse::<usize>() {
-        Ok(_) => Ok(()),
-        Err(_) => Err(v.to_owned()),
-    }
-}
-
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = Command::new("locate")
-        .version("0.6.8")
+        .version("0.6.9")
         .arg(
             Arg::new("stats")
                 .help("don't search for entries, print statistics about database")
@@ -48,14 +41,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .help("limit output (or counting) to LIMIT entries")
                 .short('l')
                 .long("limit")
-                .takes_value(true)
-                .validator(is_usize),
+                .action(ArgAction::Set)
+                .value_parser(value_parser!(usize)),
         )
-        .arg(Arg::new("pattern").required_unless_present("stats").min_values(1))
+        .arg(Arg::new("pattern").required_unless_present("stats").num_args(ValueRange::new(1..)))
         .get_matches();
 
     let loc = &Locale::fr_CA;
-    if matches.is_present("stats") {
+    if matches.contains_id("stats") {
         let mut stat = env::temp_dir();
         stat.push("locate");
         stat.set_extension("txt");
@@ -81,10 +74,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let is_limit = matches.is_present("limit");
-    let limit = matches.value_of("limit").unwrap_or("0").parse::<usize>().unwrap_or(0);
+    let is_limit = matches.contains_id("limit");
+    let limit = *matches.get_one("limit").unwrap_or(&0);
 
-    let is_count = matches.is_present("count");
+    let is_count = matches.contains_id("count");
     if is_limit && limit == 0 {
         if is_count {
             println!("0");
@@ -114,10 +107,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    let is_all = matches.is_present("all");
-    let is_base = matches.is_present("base");
-    let is_case = matches.is_present("case");
-    let patterns = matches.values_of("pattern").unwrap();
+    let is_all = matches.contains_id("all");
+    let is_base = matches.contains_id("base");
+    let is_case = matches.contains_id("case");
+    let patterns = matches.get_many("pattern").unwrap().collect::<Vec<&String>>();
 
     let mut gs_builder = GlobSetBuilder::new();
     for pattern in patterns {
