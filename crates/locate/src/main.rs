@@ -17,7 +17,7 @@ const PAS_DE_BD: &str = "La base de données est inexistante. Exécuter updatedb
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = Command::new("locate")
-        .version("0.6.9")
+        .version("0.6.10")
         .arg(
             Arg::new("stats")
                 .help("don't search for entries, print statistics about database")
@@ -72,8 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let loc = &Locale::fr_CA;
     if *matches.get_one("stats").unwrap() {
         let mut stat = env::temp_dir();
-        stat.push("locate");
-        stat.set_extension("txt");
+        stat.set_file_name("locate.txt");
         if !stat.is_file() {
             return Err(PAS_DE_BD.into());
         }
@@ -108,8 +107,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let mut db = env::temp_dir();
-    db.push("locate");
-    db.set_extension("db");
+    db.set_file_name("locate.db");
     if !db.is_file() {
         return Err(PAS_DE_BD.into());
     }
