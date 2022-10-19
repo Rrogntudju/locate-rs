@@ -7,7 +7,8 @@ use {
     std::io::{BufWriter, Write},
     std::time::Instant,
     walkdir::WalkDir,
-    windows::Win32::{Foundation::PWSTR, Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives},
+    windows::core::PCWSTR,
+    windows::Win32::{Storage::FileSystem::GetDriveTypeW, Storage::FileSystem::GetLogicalDrives},
 };
 
 #[derive(Default)]
@@ -67,7 +68,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Convert an UTF-8 string to a null-delimited UTF-16 string
                 let mut ld_utf16: Vec<u16> = ld.encode_utf16().collect();
                 ld_utf16.push(0);
-                let ld_type = unsafe { GetDriveTypeW(PWSTR(ld_utf16.as_mut_ptr())) };
+                let ld_type = unsafe { GetDriveTypeW(PCWSTR::from_raw(ld_utf16.as_mut_ptr())) };
                 if ld_type == 3 {
                     Some(ld)
                 } else {
@@ -82,8 +83,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Generate a dir list from each logical drives and save it to a temp file
     let mut stats = Statistics::default();
     let mut dirlist = env::temp_dir();
-    dirlist.push("dirlist");
-    dirlist.set_extension("txt");
+    dirlist.set_file_name("dirlist.txt");
 
     let mut writer = BufWriter::new(File::create(&dirlist)?);
     for ld in ld_fix {
@@ -106,15 +106,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Compress the dir list
     let mut db1 = env::temp_dir();
-    db1.push("locate");
-    db1.set_extension("db1");
+    db1.set_file_name("locate.db1");
     stats.db_size = compress_file(&dirlist, &db1)?;
 
     // Cleanup
     remove_file(&dirlist)?;
     let mut db = env::temp_dir();
-    db.push("locate");
-    db.set_extension("db");
+    db.set_file_name("locate.db");
     if db.is_file() {
         remove_file(&db)?;
     }
@@ -131,8 +129,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
     let j = serde_json::to_string(&stats)?;
     let mut path = env::temp_dir();
-    path.push("locate");
-    path.set_extension("txt");
+    path.set_file_name("locate.txt");
     let mut writer = BufWriter::new(File::create(path)?);
     writer.write_all(j.as_bytes())?;
     writer.flush()?;
