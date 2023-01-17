@@ -57,22 +57,24 @@ impl<'a> Iterator for FrCompress<'a> {
                 // Output the offset-differential count
                 let offset: i16 = prefix_len as i16 - self.prec_prefix_len;
                 if offset > -128 && offset < 128 {
-                    out_bytes.extend_from_slice(&(offset as i8).to_be_bytes()); // 1 byte offset
+                    // 1 byte offset
+                    out_bytes.extend_from_slice(&(offset as i8).to_be_bytes());
                 } else {
                     out_bytes.push(0x80);
-                    out_bytes.extend_from_slice(&offset.to_be_bytes()); // 2 bytes offset big-endian
+                    // 2 bytes offset big-endian
+                    out_bytes.extend_from_slice(&offset.to_be_bytes());
                 }
 
                 // Output the line without the prefix
                 let suffix_len: usize = line.len() - prefix_len;
                 if suffix_len < 128 {
+                    // 1 byte length
                     out_bytes.extend_from_slice(&(suffix_len as i8).to_be_bytes());
-                // 1 byte length
                 } else {
                     out_bytes.push(0x80);
-                    debug_assert!(suffix_len < 32768, "{} < 32768", suffix_len);
-                    out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes());
+                    assert!(suffix_len < 32768);
                     // 2 bytes length big-endian
+                    out_bytes.extend_from_slice(&(suffix_len as i16).to_be_bytes());
                 }
                 out_bytes.extend_from_slice(line[prefix_len..].as_bytes());
                 self.prec_prefix_len = prefix_len as i16;
@@ -112,7 +114,7 @@ impl<'a> FrDecompress<'a> {
             Some(i8::from_be_bytes([count_1b[0]]) as i16)
         } else {
             let count_2b = bytes_mut.take(2).filter_map(Result::ok).collect::<Vec<u8>>();
-            debug_assert_eq!(count_2b.len(), 2);
+            assert_eq!(count_2b.len(), 2);
             Some(i16::from_be_bytes([count_2b[0], count_2b[1]]))
         }
     }
@@ -120,7 +122,7 @@ impl<'a> FrDecompress<'a> {
     fn suffix_from_bytes(&mut self, len: usize) -> Result<String, FromUtf8Error> {
         let bytes_mut = &mut self.bytes;
         let suffix = bytes_mut.take(len).filter_map(Result::ok).collect::<Vec<u8>>();
-        debug_assert_eq!(suffix.len(), len);
+        assert_eq!(suffix.len(), len);
         String::from_utf8(suffix)
     }
 }
