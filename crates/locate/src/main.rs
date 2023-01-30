@@ -10,6 +10,7 @@ use {
     std::error::Error,
     std::fs::File,
     std::io::{stdout, BufReader, BufWriter, Write},
+    std::sync::mpsc,
     std::thread,
 };
 
@@ -114,13 +115,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let db_file = File::open(db)?;
 
     // run the FrDecompress iterator on his own thread
-    let (tx, rx) = flume::unbounded();
+    let (tx, rx) = mpsc::channel();
     thread::spawn(move || {
         let decompressed_entries = FrDecompress::new(BufReader::new(db_file));
         for entry in decompressed_entries {
             if let Err(e) = tx.send(entry.unwrap()) {
                 if !is_limit {
-                    eprintln!("{}", e);
+                    eprintln!("{e}");
                 }
                 break;
             }
@@ -136,10 +137,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     for pattern in patterns {
         let pattern = if let Some(pattern) = pattern.strip_prefix('/') {
             pattern.to_owned() // pattern «as is»
-        } else if pattern.starts_with("*") || pattern.ends_with("*") {
+        } else if pattern.starts_with('*') || pattern.ends_with('*') {
             pattern.to_owned() // pattern «as is»
         } else {
-            format!("*{}*", pattern) // implicit globbing
+            format!("*{pattern}*") // implicit globbing
         };
 
         let g_builder = GlobBuilder::new(&pattern)

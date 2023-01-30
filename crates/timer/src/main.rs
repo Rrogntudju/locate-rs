@@ -42,7 +42,7 @@ fn timer() -> i32 {
                 }
             }
             Err(e) => {
-                println!("{}", e);
+                println!("{e}");
                 if let Some(code) = e.raw_os_error() {
                     exit_code = code;
                 }

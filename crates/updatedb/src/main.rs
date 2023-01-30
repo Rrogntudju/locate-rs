@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ld_bits: u32 = unsafe { GetLogicalDrives() };
     if ld_bits == 0 {
         return Err(match std::io::Error::last_os_error().raw_os_error() {
-            Some(e) => format!("GetLogicalDrives: {}", e).into(),
+            Some(e) => format!("GetLogicalDrives: {e}").into(),
             None => "GetLogicalDrives: DOH!".into(),
         });
     }
@@ -92,10 +92,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             if let Ok(m) = entry.metadata() {
                 let p = entry.path().to_string_lossy(); // path may contain non-unicode sequence
                 if m.is_dir() {
-                    write!(writer, "{}\\\n", p)?;
+                    writeln!(writer, "{p}\\")?;
                     stats.dirs += 1;
                 } else {
-                    write!(writer, "{}\n", p)?;
+                    writeln!(writer, "{p}")?;
                     stats.files += 1;
                     stats.files_bytes += p.len();
                 }
